@@ -1,3 +1,4 @@
+import sys
 import pickle
 import numpy as np
 import os
@@ -63,47 +64,47 @@ X = X[1::]
 Y = Command[:,0]
 
 #SVM
-print("Starting program...(1)")
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.1)
 x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2)
 
 
 #SVM 參數調整
-C_range = [0.1, 1]
-kernels = ['linear', 'rbf', 'poly']
-best_C = 0
-best_kernel = ''
-best_accuracy = 0
-best_f1_score = 0
+# C_range = [0.1, 1]
+# kernels = ['linear', 'rbf', 'poly']
+# best_C = 0
+# best_kernel = ''
+# best_accuracy = 0
+# best_f1_score = 0
 
-for C in C_range:
-    for kernel in kernels:
-        model = SVC(C=C, kernel=kernel)
-        model.fit(x_train, y_train)
-        y_predict = model.predict(x_val)
+C_range = sys.argv[1]
+ker = sys.argv[2]
+
+# for C in C_range:
+#     for kernel in kernels:
+#         model = SVC(C=C, kernel=kernel)
+#         model.fit(x_train, y_train)
+#         y_predict = model.predict(x_val)
         
-        acc = accuracy_score(y_val, y_predict)
-        f1 = f1_score(y_val, y_predict, average='weighted')
+#         acc = accuracy_score(y_val, y_predict)
+#         f1 = f1_score(y_val, y_predict, average='weighted')
 
-        print(f"C = {C}, Kernel = {kernel}, Accuracy = {acc:.3f}, F1 Score = {f1:.3f}")
+#         print(f"C = {C}, Kernel = {kernel}, Accuracy = {acc:.3f}, F1 Score = {f1:.3f}")
 
-        if acc > best_accuracy:
-            best_accuracy = acc
-            best_f1_score = f1
-            best_C = C
-            best_kernel = kernel
+#         if acc > best_accuracy:
+#             best_accuracy = acc
+#             best_f1_score = f1
+#             best_C = C
+#             best_kernel = kernel
 
-print("Starting program...(2)")
-model = SVC(C = best_C, kernel = best_kernel)
+model = SVC(C = C_range, kernel = ker)
 model = model.fit(x_train, y_train)
 y_predict = model.predict(x_test)
-print("Starting program...(3)")
 
 Accuracy = float('{:.3f}'.format(accuracy_score(y_predict, y_test)))
 F1Score = float('{:.3f}'.format(f1_score(y_test, y_predict, average='weighted')))
 
-print(f"Best C = {best_C}, Best Kernel = {best_kernel}")
-print(f"Testing Accuracy = {Accuracy}, Testing F1 Score = {F1Score}")
+# print(f"Best C = {best_C}, Best Kernel = {best_kernel}")
+# print(f"Testing Accuracy = {Accuracy}, Testing F1 Score = {F1Score}")
 
 # save model
 
@@ -116,7 +117,7 @@ if not os.path.isdir(path):
 #     pickle.dump(model,f)
     
 with open(os.path.join(os.path.dirname(__file__),'save',\
-    "SVM_classification_C={}_karnel={}_acc={:.2f}_data={}.pickle".format(best_C, best_kernel, Accuracy, len(X))),'wb') as f:
+    "SVM_classification_C={}_karnel={}_acc={:.2f}_data={}.pickle".format(C_range, ker, Accuracy, len(X))),'wb') as f:
     pickle.dump(model,f)
 
     
