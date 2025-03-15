@@ -1,3 +1,4 @@
+import sys
 import pickle
 import numpy as np
 import os
@@ -66,15 +67,19 @@ Y = Command[:,0]
 
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
 
-model = DecisionTreeClassifier()
-model = model.fit(x_train, y_train)
-y_predict = model.predict(x_test)
-Accuracy = float('{:.3f}'.format(accuracy_score(y_predict,y_test)))
-depth = model.tree_.max_depth
-print("depth = ", depth, "Accuracy = ", Accuracy)
+d_value = sys.argv[1]
 
-F1Score = float('{:.3f}'.format(f1_score(y_test, y_predict, average="weighted")))
-print("F1 score = ", F1Score)
+model = DecisionTreeClassifier(max_depth = d_value)
+model = model.fit(x_train, y_train)
+
+
+# y_predict = model.predict(x_test)
+# Accuracy = float('{:.3f}'.format(accuracy_score(y_predict,y_test)))
+# depth = model.tree_.max_depth
+# print("depth = ", depth, "Accuracy = ", Accuracy)
+
+# F1Score = float('{:.3f}'.format(f1_score(y_test, y_predict, average="weighted")))
+# print("F1 score = ", F1Score)
 
 # save model
 
@@ -83,7 +88,7 @@ if not os.path.isdir(path):
     os.mkdir(path)
 
 with open(os.path.join(os.path.dirname(__file__),'save',\
-    "DCT_classification_depth={}_acc={:.2f}_data={}.pickle".format(depth, Accuracy, len(X))),'wb') as f:
+    "DCT_classification.pickle"),'wb') as f:
     pickle.dump(model,f)
 
     

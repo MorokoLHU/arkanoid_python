@@ -67,7 +67,11 @@ Y = Command[:,0]
 
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
 
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+d_value = sys.argv[1]
+ran_value = sys.argv[2]
+n_value = sys.argv[3]
+
+model = RandomForestClassifier(max_depth = d_value, random_state = ran_value, n_estimators = n_value)
 model.fit(x_train, y_train)
 
 y_predict = model.predict(x_test)
@@ -89,5 +93,5 @@ if not os.path.isdir(path):
     os.mkdir(path)
 
 with open(os.path.join(os.path.dirname(__file__),'save',\
-    "RDF_classification_avg_depth={:.2f}_max_depth={}_acc={:.2f}_data={}.pickle".format(avg_depth, max_depth, Accuracy, len(X))),'wb') as f:
+    "RDF_classification.pickle"),'wb') as f:
     pickle.dump(model,f)

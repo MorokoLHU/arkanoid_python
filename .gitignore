@@ -9,7 +9,9 @@
 venv/*
 .vs/*
 .vscode/*
-# ml_play*.py
+ml_play*.py
+check_pickle.py
+test_KNN_train_R.py
 # ml/*
 !ml_play_template.py
 !ml_play_manual.py

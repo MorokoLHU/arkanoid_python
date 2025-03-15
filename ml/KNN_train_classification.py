@@ -1,3 +1,4 @@
+import sys
 import pickle
 import numpy as np
 import os
@@ -66,41 +67,16 @@ Y = Command[:,0]
 # KNN
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.1)
 x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2)
-k_range = range(1,30)
-scores = []
-k_final = 0
-Accuracy = 0
-F1Score = 0
 
-for k in k_range:
-    k = k + 1
-    model = KNeighborsClassifier(n_neighbors=k)
-    model.fit(x_train,y_train)
-    y_predict = model.predict(x_val)
-    
-    acc = accuracy_score(y_predict,y_val)
-    print("k = ",k ,"Accuracy = %.2f" % acc)
-    scores.append(acc)
-    if acc > Accuracy:
-        Accuracy = acc
-        k_final = k
+K_value = sys.argv[1]
         
-    fs = f1_score(y_val, y_predict, average='weighted')
-    print("k = ",k ,"Accuracy = %.2f" % acc)
-    scores.append(fs)
-    if fs > F1Score:
-        F1Score = fs
-        k_final = k
-        
-model = KNeighborsClassifier(n_neighbors=k_final)
+model = KNeighborsClassifier(n_neighbors=K_value)
 model.fit(x_train, y_train)
-y_predict = model.predict(x_test)
-Accuracy = float('{:.3f}'.format(accuracy_score(y_predict,y_test)))
-training_score = float('{:.3f}'.format(model.score(x_train,y_train)))
-testing_score = float('{:.3f}'.format(model.score(x_test,y_test)))
-print("k = ", k_final, "Accuracy = ", Accuracy)
-print("training data score = ", training_score)
-print("testing data score = ", testing_score)
+# y_predict = model.predict(x_test)
+# Accuracy = float('{:.3f}'.format(accuracy_score(y_predict,y_test)))
+# training_score = float('{:.3f}'.format(model.score(x_train,y_train)))
+# testing_score = float('{:.3f}'.format(model.score(x_test,y_test)))
+
 
 # save model
 
@@ -108,5 +84,5 @@ path = os.path.join(os.path.dirname(__file__), "save")
 if not os.path.isdir(path):
     os.mkdir(path)
 with open(os.path.join(os.path.dirname(__file__), 'save',\
-    "KNN_classification_k={}_acc={:.2f}_data={}.pickle".format(k_final, Accuracy, len(X))), 'wb') as f :
+    "KNN_classification.pickle"), 'wb') as f :
     pickle.dump(model,f)
