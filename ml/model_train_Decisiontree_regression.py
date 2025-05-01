@@ -1,6 +1,7 @@
 import pickle
 import numpy as np
 import os
+import sys
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from math import sqrt
@@ -77,10 +78,18 @@ Y = Position_pred
 
 length = len(Ball_x)
 
+
+
 # training
+
+#使其接收PHP的參數
+php_max_depth = int(sys.argv[1]) 
+
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
 
-model = DecisionTreeRegressor(criterion='squared_error', max_depth=30, splitter='best')
+model = DecisionTreeRegressor(criterion='squared_error',
+                              max_depth=php_max_depth,
+                              splitter='best')
 model.fit(x_train, y_train) # 擬合 training
 
 # evaluation
@@ -94,5 +103,5 @@ filepath = os.path.join(os.path.dirname(__file__), 'save')
 if not os.path.isdir(filepath):
     os.mkdir(filepath)
 
-with open(os.path.join(filepath, 'DCT_regression_depth={}_rmse={}.pickle'.format(depth, rmse)), 'wb') as f:
+with open(os.path.join(filepath, 'DCT_RE_depth={}_rmse={:.2f}.pickle'.format(depth, rmse)), 'wb') as f:
     pickle.dump(model, f)

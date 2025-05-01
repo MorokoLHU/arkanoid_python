@@ -1,7 +1,7 @@
 import pickle
 import numpy as np
 import os
-
+import sys
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from math import sqrt
@@ -68,8 +68,14 @@ length = len(Ball_x)
 # **拆分訓練和測試集**
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
-# **改用隨機森林回歸**
-model = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42)
+# **隨機森林回歸**
+php_max_depth = int(sys.argv[1]) 
+php_random_state =int(sys.argv[2]) 
+php_n_estimators = int(sys.argv[3])
+
+model = RandomForestRegressor(n_estimators=php_n_estimators,
+                              max_depth=php_max_depth,
+                              random_state=php_random_state)
 model.fit(x_train, y_train)
 
 # **評估模型**
@@ -83,6 +89,6 @@ save_path = os.path.join(os.path.dirname(__file__), "save")
 if not os.path.isdir(save_path):
     os.mkdir(save_path)
 
-model_filename = "RandomForest_regression_rmse={:.2f}_data={}.pickle".format(rmse, length)
+model_filename = "RandomForest_RE_rmse={:.2f}.pickle".format(rmse)
 with open(os.path.join(save_path, model_filename), 'wb') as f:
     pickle.dump(model, f)

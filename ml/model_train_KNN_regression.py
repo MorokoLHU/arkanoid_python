@@ -1,7 +1,7 @@
 import pickle
 import numpy as np
 import os
-
+import sys
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from math import sqrt
@@ -67,21 +67,8 @@ length = len(Ball_x)
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)  # 資料拆成8:2的訓練及測試
 
 RMSE = 10000
-k_final = 0
-
-for k in range(2, 50):
-    model = KNeighborsRegressor(n_neighbors=k)
-    model.fit(x_train, y_train)
-
-    # evaluation
-    y_predict = model.predict(x_test)
-    mse = mean_squared_error(y_test, y_predict)
-    print(mse)
-    rmse = sqrt(mse)
-    print("k =", k, ", RMSE = %.2f" % rmse)
-    if rmse < RMSE:
-        RMSE = rmse
-        k_final = k
+k_final = int(sys.argv[1]) 
+#使其接收PHP的參數
 
 # training in best k
 model = KNeighborsRegressor(n_neighbors=k_final)
@@ -93,5 +80,5 @@ print("k =", k_final, "RMSE = %.2f" % rmse)
 
 # save the model
 with open(os.path.join(os.path.dirname(__file__), 'save',
-                       "KNN_regression_k={}_rmse={:.2f}_data={}.pickle".format(k_final, rmse, length)), 'wb') as f:
+                       "KNN_RE_k={}_rmse={:.2f}.pickle".format(k_final, rmse)), 'wb') as f:
     pickle.dump(model, f)

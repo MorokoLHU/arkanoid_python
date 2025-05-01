@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <title>選擇機器學習模型</title>
+    <link href="styles.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+
+        // 確保脚本在頁面完全加载後执行
+        document.addEventListener('DOMContentLoaded', function () {
+            var allElements = document.querySelectorAll('[id]');
+            TrainStopPOST();
+            CreateStopPOST();
+            MenuBtnactive();
+            RUNMLplay();
+            fetchpylocationset()
+            downloadcheck()
+            ShowMLplayform()
+        });
+        function showParams() {
+            var model = document.getElementById("model").value;
+            var taskTypeSelect = document.getElementById("task_type");
+            var taskTypeLabel = document.getElementById("task_type_label");
+            // 隱藏所有參數區塊
+
+            var allParams = ["knn_params",
+                "decision_tree_params",
+                "random_forest_params",
+                "linearSVC_params",
+                "linearSVR_params",
+                "logisticRegression_params",
+                "linear_regression_params",
+                "SVM_params"
+            ];
+
+            allParams.forEach(function (id) {
+                document.getElementById(id).style.display = "none";
+            });
+            var allIntroductions = [
+                "KNN_Introduction",
+                "DecisionTree_Introduction",
+                "RandomForest_Introduction",
+                "LinearSVC/SVR_Introduction",
+                "LogisticRegression/Linear_Introduction",
+                "SVM_Introduction"
+            ];
+
+            allIntroductions.forEach(function (id) {
+                document.getElementById(id).style.display = "none";  // 隐藏所有的介绍
+            });
+
+
+            // 顯示對應的參數區塊
+            if (model === "KNeighbors") {
+                document.getElementById("knn_params").style.display = "block";
+                document.getElementById("KNN_Introduction").style.display = "block";
+
+            } else if (model === "DecisionTree") {
+                document.getElementById("decision_tree_params").style.display = "block";
+                document.getElementById("DecisionTree_Introduction").style.display = "block";
+
+            } else if (model === "RandomForest") {
+                document.getElementById("random_forest_params").style.display = "block";
+                document.getElementById("RandomForest_Introduction").style.display = "block";
+
+            } else if (model === "LinearSVC") {
+                document.getElementById("linearSVC_params").style.display = "block";
+                document.getElementById("LinearSVC/SVR_Introduction").style.display = "block";
+
+            } else if (model === "LinearSVR") {
+                document.getElementById("linearSVR_params").style.display = "block";
+                document.getElementById("LinearSVC/SVR_Introduction").style.display = "block";
+
+            } else if (model === "LogisticRegression") {
+                document.getElementById("logisticRegression_params").style.display = "block";
+                document.getElementById("LogisticRegression/Linear_Introduction").style.display = "block";
+
+            } else if (model === "LinearRegression") {
+                document.getElementById("linear_regression_params").style.display = "block";
+                document.getElementById("LogisticRegression/Linear_Introduction").style.display = "block";
+
+            } else if (model === "SVM") {
+                document.getElementById("SVM_params").style.display = "block";
+                document.getElementById("SVM_Introduction").style.display = "block";
+            }
+            taskTypeSelect.innerHTML = "";  // 清空原本的選項
+            //<label for="task_type">Regression only! </label>
+            //<label for="task_type">classification only! </label>
+
+            if (model === "LinearSVC" || model === "LogisticRegression") {
+                taskTypeSelect.innerHTML = '<option value="classification">classification</option>';
+                taskTypeLabel.innerHTML = "classification only!";
+            } else if (model === "LinearSVR" || model === "LinearRegression") {
+                taskTypeSelect.innerHTML = '<option value="regression">Regression</option>';
+                taskTypeLabel.innerHTML = "Regression only!";
+            } else {
+                taskTypeSelect.innerHTML = '<option value="classification">classification</option><option value="regression">Regression</option>';
+                taskTypeLabel.innerHTML = 'Regression & classification?'
+            }
+        }
+        // 根據選擇的模型，更新 task_type 的可選項
+        function CreateStopPOST() {
+            document.getElementById('fileForm').addEventListener('submit', function (event) {
+                event.preventDefault(); // 阻止表單預設送出行為
+                const FileElement = document.getElementById('fileInput');
+                const FileValue = FileElement.value;
+                const CreateResultDiv = document.getElementById('ShowCSV');
+                CreateResultDiv.innerHTML = '<div style="text-align: center;"><p>🚀 生成中，請稍候...</p></div>';// 顯示loading提示
+                const formData = new FormData(this);
+                fetch('CreatePlayPY.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.text()) // 假設 train_model.php 回傳的是HTML或純文字
+                    .then(data => {
+                        alert(data); // 訓練完成後，把內容放進來
+                        CreateResultDiv.innerHTML = '<div style="text-align: center;"><p>✅已成功！<br</p></div>';
+                    })
+            });
+        }
+        //fetch將PHP結果不跳轉頁面
+        function TrainStopPOST() {
+            document.getElementById('trainForm').addEventListener('submit', function (event) {
+                event.preventDefault(); // 阻止表單預設送出行為
+                const selectElement = document.getElementById('model');
+                const selectedValue = selectElement.value;
+
+                // 如果選擇了 "-"（無效選項），則阻止表單提交
+                if (selectedValue === '-') {
+                    alert('請選擇有效的選項！')
+                } else {
+                    const trainResultDiv = document.getElementById('train_result');
+                    trainResultDiv.innerHTML = '<div style="text-align: center;"><img class="train_result_img" src="image/loading-animation.gif" alt="Loading..."><p>🚀 訓練中，請稍候...</p></div>';// 顯示loading提示
+
+                    const formData = new FormData(this);
+
+                    fetch('train_model.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.text()) // 假設 train_model.php 回傳的是HTML或純文字
+                        .then(data => {
+                            trainResultDiv.innerHTML = data; // 訓練完成後，把內容放進來
+                            happyturn();
+                        })
+                        .catch(error => {
+                            console.error('發生錯誤:', error);
+                            trainResultDiv.innerHTML = '<p style="color: red;">❌ 發生錯誤，請稍後再試。</p>';
+                        });
+                };
+            });
+        }
+        // 阻止表單預設送出行為，將其資料POST至本頁面的train_result的div之中。
+        function MenuBtnactive() {
+            const menuButtons = document.querySelectorAll('.menu-button');
+            const topBanner = document.getElementById('top_banner');
+            const wrappertext = document.getElementById('wrappertext')
+            menuButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    // 先清除所有按鈕的 active
+                    menuButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    // 根據按的按鈕設定要顯示的內容＆TopBanner文字
+                    if (this.id === "Presetsetting") {
+                        showSections(["Presetsettingsection"]);
+                        wrappertext.innerHTML = "前言";
+                        topBanner.innerHTML = "以上請先閱讀";
+                    }
+                    else if (this.id === "chooseModelBtn") {
+                        showSections(["ChooseModel", "IntroductionSection"]);
+                        topBanner.innerHTML = "Machine Learning Algorithms Introduction!";
+                        wrappertext.innerHTML = "選擇機器學習模型";
+                    } else if (this.id === "runModelBtn") {
+                        showSections(["DragModel", "ShowCSV"]);
+                        wrappertext.innerHTML = "以Pygame-Arkanoid去做模型的學習成果展示!!";
+                        topBanner.innerHTML = "結果展示";
+                    } else if (this.id === "RANKModelBtn") {
+                        // 如果還有第三種
+                        showSections(["RANKSection"]);
+                        wrappertext.innerHTML = "各模型的結果展示";
+                        topBanner.innerHTML = "模型排名";
+                    }
+                });
+            });
+            function showSections(sectionIds) {
+                // 先隱藏所有主要區塊
+                const allSections = ["Presetsettingsection", "ChooseModel", "DragModel", "IntroductionSection", "ShowCSV", "RANKSection"];
+                allSections.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.style.display = "none";
+                    }
+                });
+                // 再顯示需要的
+                sectionIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        // IntroductionSection 用 block，其他用 flex
+                        el.style.display = (id === "IntroductionSection" || id === "ShowCSV" || id === "RANKSection") ? "block" : "flex";
+                    }
+                });
+            }
+        };
+        // 根據選Menu所選擇的按鈕做不同的顯示
+        async function fetchFileNames() {
+            try {
+                const response = await fetch('DragForm.php'); // 抓檔案清單
+                const data = await response.json();
+
+                if (data.error) {
+                    alert(`錯誤代碼: ${data.error_code}\n錯誤訊息: ${data.message}`);
+                    return;
+                }
+
+                const fileNames = data.file_names;
+                if (!Array.isArray(fileNames)) {
+                    throw new Error('file_names 不是陣列');
+                }
+
+                // 👉 依字數長短排序（長的在前）
+                fileNames.sort((a, b) => b.length - a.length);
+
+                const dragContainer = document.getElementById('dragContainer');
+                dragContainer.innerHTML = ''; // 清空原本的項目
+
+                fileNames.forEach(name => {
+                    // 建立 drag-item
+                    const div = document.createElement('div');
+                    div.classList.add('drag-item');
+                    div.textContent = name;  // 顯示檔名
+                    div.setAttribute('draggable', 'true');
+                    div.setAttribute('data-filename', name);
+
+                    // 建立 X 按鈕
+                    const closeBtn = document.createElement('a');
+                    closeBtn.classList.add('close');
+                    closeBtn.href = "#";
+
+                    // X 按鈕點擊時，觸發刪除
+                    closeBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();  // 不觸發拖拉
+                        e.preventDefault();  // 防止跳轉
+
+                        const confirmDelete = confirm(`確定要刪除 ${name} 嗎？`);
+                        if (!confirmDelete) return;
+
+                        try {
+                            const deleteResponse = await fetch('deleteBtn.php', {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ filename: name })
+                            });
+
+                            const result = await deleteResponse.json();
+
+                            if (result.success) {
+                                alert(`檔案 ${name} 已刪除`);
+                                div.remove();  // 成功後刪除畫面上的項目
+                            } else {
+                                alert(`刪除失敗: ${result.message}`);
+                            }
+                        } catch (error) {
+                            alert('刪除檔案時發生錯誤: ' + error.message);
+                        }
+                    });
+
+                    div.appendChild(closeBtn);
+
+                    // 設定拖拉開始
+                    div.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', name);
+                    });
+
+                    dragContainer.appendChild(div);
+                });
+            } catch (error) {
+                alert('無法取得檔案名稱: ' + error.message);
+            }
+        }
+        // 抓取save中所擁有的檔案名稱以JSON存取，轉換為選項，並加上刪除按鈕
+        async function fetchpylocationset() {
+            document.getElementById('Pylocation_set').addEventListener('submit', function (e) {
+                e.preventDefault(); // 阻止預設提交
+
+                const pathValue = document.getElementById('Pylocation').value;
+
+                fetch('pylocationset.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'Pylocation=' + encodeURIComponent(pathValue)
+                })
+                    .then(response => response.text())
+                    .then(result => {
+                        alert(result);
+                    })
+                    .catch(error => {
+                        alert('發生錯誤：' + error);
+                    });
+            });
+        }
+
+        function RUNMLplay() {
+            document.getElementById('MLplayform').addEventListener('submit', function (event) {
+                event.preventDefault(); // 阻止表單預設送出行為
+                const MLplayResultDiv = document.getElementById('ShowCSV');
+                MLplayResultDiv.innerHTML = '<div style="text-align: center;"><img class="" src="image/arkanoid-schematic.gif" alt="arkanoid-schematic"><p>🚀 (示意圖) 實際成果生成中，請稍待片刻...</p></div>';// 顯示loading提示
+                const formData = new FormData(this);
+                fetch('RunMLplay.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.text()) // 假設 train_model.php 回傳的是HTML或純文字
+                    .then(data => {
+                        MLplayResultDiv.innerHTML = data; // 訓練完成後，把內容放進來
+                    })
+            });
+        }
+        let myChart; // 定義為全域變數
+
+        function loadRank() {
+            resetCanvas()
+            // 1. 載入表格資料
+            fetch('generate_rank.php')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('RankTable').innerHTML = html;
+                });
+
+            // 2. 載入圖表資料
+            fetch('get_data.php')
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('myChart').getContext('2d');
+
+                    // 如果已存在圖表，先摧毀
+                    if (myChart instanceof Chart) {
+                        myChart.destroy();
+                    }
+
+                    // 建立新圖表
+                    myChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.labels,
+                            datasets: [
+                                {
+                                    label: '執行次數',
+                                    data: data.total_runs,
+
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                    yAxisID: 'y2'
+                                },
+                                {
+
+                                    label: '通關次數',
+                                    data: data.passtimes,
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                    yAxisID: 'y2'
+                                },
+                                {
+
+                                    label: '通關率',
+                                    data: data.pass_rate,
+                                    type: 'line',
+                                    borderColor: 'rgba(255, 99, 132, 0.5)',
+                                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                                    yAxisID: 'y1'
+                                },
+
+                            ]
+                        },
+                        options: {
+                            responsive: false,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y1: {
+                                    position: 'right',
+                                    beginAtZero: true,
+                                    title: { display: true, text: '比率 (%)' }
+                                },
+                                y2: {
+                                    position: 'left',
+                                    beginAtZero: true,
+                                    title: { display: true, text: '次數' },
+                                    grid: { drawOnChartArea: false }
+                                }
+                            }
+                        }
+                    });
+                });
+        }
+        function resetCanvas() {
+            const oldCanvas = document.getElementById("myChart");
+            if (oldCanvas) {
+                const parent = oldCanvas.parentNode;
+                oldCanvas.remove();
+
+                const newCanvas = document.createElement("canvas");
+                newCanvas.id = "myChart";
+                newCanvas.className = "myChart";
+                parent.appendChild(newCanvas);
+            }
+        }
+        function downloadcheck() {
+
+            document.getElementById('downloadcheck').addEventListener('change', function () {
+                const formDiv = document.getElementById('Pylocation_set');
+                formDiv.style.display = this.checked ? 'none' : 'block';
+            });
+
+        }
+        function happyturn() {
+            let flipped = false;
+            setInterval(() => {
+                flipped = !flipped;
+                document.getElementById('happyturn').style.transform = flipped ? 'scaleX(-1)' : 'scaleX(1)';
+            }, 1000);
+        }
+        function ShowMLplayform(){
+            document.getElementById('ShowMLplayform').addEventListener('change', function () {
+                const mlDiv = document.getElementById('MLplayform');
+                mlDiv.style.display = this.checked ? 'block' : 'none';
+              });
+        }
+
+    </script>
+</head>
+
+<body>
+    <div class="header">
+        <header><img class="NETicon" src="image/NETICON.jpg"><span>Machine Learning</span></header>
+
+
+    </div>
+    <div class="menu-container">
+        <h2 class="menu-title">Menu</h2>
+        <button class="menu-button" id="Presetsetting">Preset settings</button>
+        <button class="menu-button" id="chooseModelBtn">Choose Model</button>
+        <button class="menu-button" id="runModelBtn" onclick="fetchFileNames()">Run Model</button>
+        <button class="menu-button" id="RANKModelBtn" onclick="loadRank()">Model RANK</button>
+    </div>
+
+    <div class="wrapper">
+        <h2 id="wrappertext" style="text-align: left;">&nbsp;&nbsp;&nbsp;前言</h2>
+        <div class="container">
+            <div class="Presetsettingsection" id="Presetsettingsection" style="display: flex;">
+
+                <article style="display: flex; align-items: flex-start; gap: 20px; max-width: 100%;">
+
+                    <!-- 圖片區 -->
+                    <img src="image/teach.png" style="width: 120px; height: auto; flex-shrink: 0; ">
+
+                     <!-- 文字 + 表單區 -->
+                     <div style="flex: 1; min-width: 0; word-wrap: break-word;">
+                        <p>若您是下載的User開始使用本專案之前請確保</p>
+                        <p>1.本電腦有安裝3.9.x版本的python&nbsp;&nbsp;&nbsp;&nbsp;
+                            <a href="https://www.python.org/downloads/release/python-3913/">Python3.9</a>
+                        </p>
+                        <p>2.已在3.9.x的python環境中運用pip安裝好mlgame&nbsp;&nbsp;&nbsp;
+                            <a href="https://pypi.org/project/mlgame/">MLgame-Release</a>
+                        </p>
+                        <p>3.確保運行此網頁時可以正常運作php-Script<br>
+                            (例如wampserver：請將本方案解壓縮至X:xxx/wamp64/www之中)
+                        </p>
+                        <p>無下載專案動作請跳過此頁面</p>
+                        <label><input type="checkbox" id="downloadcheck" name="download">不需進行設定</label>
+                        <form id="Pylocation_set" action="pylocationset.php" method="POST">
+                            <p>以上三點OK請於下方設定存在MLGAME的3.9.x的python的路徑。</p>
+                            <p>(僅一次即可)<br>
+                                ex：C:\Users\xxx\Documents\python\.venv\Scripts\python.exe
+                            </p>
+                            <label for="Pylocation">輸入路徑(包含python.exe)：</label>
+                            <input type="text" id="Pylocation" name="Pylocation" placeholder="安裝mlgame的python3.9路徑">
+                            <input type="submit" value="設定您的python路徑">
+                        </form>
+                    </div>
+                </article>
+
+
+            </div>
+            <div class="ChooseModel" id="ChooseModel" style="display: none;">
+                <div class="formDiv">
+                    <!-- 選擇模型表單 -->
+                    <form id="trainForm" action="train_model.php" method="POST">
+
+                        <label for="model">選擇模型：</label>
+                        <select name="model" id="model" onchange="showParams() " required>
+                            <option>-</option>
+                            <option value="KNeighbors">K Neighbors</option>
+                            <option value="DecisionTree">Decision Tree</option>
+                            <option value="RandomForest">Random Forest</option>
+                            <option value="LinearSVC">LinearSVC</option>
+                            <option value="LinearSVR">LinearSVR</option>
+                            <option value="LogisticRegression">LogisticRegression</option>
+                            <option value="LinearRegression">LinearRegression</option>
+                            <option value="SVM">SVM</option>
+                        </select>
+                        <br><br>
+                        <label for="task_type" id="task_type_label">Regression & classification? </label>
+                        <select name="task_type" id="task_type">
+                            <option value="classification">classification</option>
+                            <option value="regression">Regression</option>
+                        </select>
+                        <br><br>
+                        <!-- KNeighbors 參數 -->
+                        <div id="knn_params" style="display:block;">
+
+
+                            <label for="k_value">K 值(1-30)：</label>
+                            <input type="number" name="k_value" min="1" max="30" value="5">
+                        </div>
+
+                        <!-- DecisionTree 參數 -->
+                        <div id="decision_tree_params" style="display:none;">
+                            <label for="max_depth">最大深度(1-20)：</label>
+                            <input type="number" name="max_depth" min="1" max="20" value="10">
+                        </div>
+
+                        <!-- RandomForest 參數 -->
+                        <div id="random_forest_params" style="display:none;">
+
+                            <label for="max_depth">最大深度(1-20)：</label>
+                            <input type="number" name="max_depth" min="1" max="20" value="10">
+                            <br>
+                            <label for="random_state">random_state(1-100):</label>
+                            <input type="number" name="random_state" min="1" max="100" value="10">
+                            <br>
+
+                            <label for="n_estimators">n_estimators(10-100):</label>
+                            <input type="number" name="n_estimators" min="10" max="100" value="100">
+
+                        </div>
+
+                        <!-- linearSVC_params 參數 -->
+                        <div id="linearSVC_params" style="display:none;">
+
+                            <label for="svc_C">C值(0.1-10)：</label>
+                            <input type="number" name="svc_C" step="0.1" min="0.1" max="10" value="1.0">
+
+                        </div>
+
+                        <!-- linearSVR_params 參數 -->
+                        <div id="linearSVR_params" style="display:none;">
+
+                            <label for="svr_C">C值(0.1-10)：</label>
+                            <input type="number" name="svr_C" step="0.1" min="0.1" max="10" value="1.0">
+                            <br>
+                            <label for="svr_epsilon">Epsilon(0.01-1)：</label>
+                            <input type="number" name="svr_epsilon" step="0.01" min="0.01" max="1" value="0.1">
+                        </div>
+
+                        <!-- logisticRegression_params 參數 -->
+                        <div id="logisticRegression_params" style="display:none;">
+
+                            <label for="logistic_C">C值(0.1-10)：</label>
+                            <input type="number" name="logistic_C" step="0.1" min="0.1" max="10" value="1.0">
+                            <br>
+
+                        </div>
+
+                        <!-- linear_regression_params 參數 -->
+                        <div id="linear_regression_params" style="display:none;">
+
+                            <label for="linear_fit_intercept">是否擷取截距：</label>
+                            <select name="linear_fit_intercept">
+                                <option value="true">是</option>
+                                <option value="false">否</option>
+                            </select>
+                        </div>
+
+                        <!-- SVM_params 參數 -->
+                        <div id="SVM_params" style="display:none;">
+
+                            <label for="svm_kernel">選擇核函數：</label>
+                            <select name="svm_kernel">
+                                <option value="linear">線性 (Linear)</option>
+                                <option value="poly">多項式 (Polynomial)</option>
+                                <option value="rbf">徑向基 (RBF)</option>
+                            </select>
+                            <br>
+                            <label for="svm_C">C值(0.1-10)：</label>
+                            <input type="number" name="svm_C" step="0.1" min="0.1" max="10" value="1.0">
+                        </div>
+
+                        <br><br>
+                        <input type="submit" value="開始訓練">
+                    </form>
+
+                </div>
+                <hr>
+                <div id="train_result" class="train_result">我是PHP結果</div>
+                <!-- 不切換頁面顯示py結果 -->
+            </div>
+            <div class="DragModel" id="DragModel" style="display: none;">
+
+                <!-- 左邊的拖拉區域 -->
+                <div class="drag-container" id="dragContainer">
+                    <!-- 這裡會動態插入檔案名稱 -->
+                </div>
+
+                <!-- 右邊的表單區域 -->
+                <div class="dragform-container" id="DragformContainer" style="position:relative;">
+                    <form id="fileForm" action="CreatePlayPY.php" method="POST">
+                        <div class="Dragform-field">
+                            <label for="fileInput">選擇檔案：</label>
+                            <input type="text" id="fileInput" name="fileInput" placeholder="拖拉檔案名稱到這裡" readonly>
+                            <label>每次運行的時間不超過:&nbsp;<input type="number" name="timelimit" min="1" max="20"
+                                    value="10">秒<br />(使AI在秒數到了之後停止運作)</label>
+                            <span>以上都設定好了!</span><input id="ShowMLplayform" type="checkbox" required>
+                            <label></label>
+                            <input type="submit" value="生成該模型專用MLplay檔案">
+                             <p>MLplay生成完畢之後 在使用下方的功能喔!!!</p>
+                        </div>
+                    </form>
+                    <div class="MLplay">
+                        <form id="MLplayform" class="MLplayform" action="RunMLplay.php" method="POST" style="display: none;">
+                           
+                            <input type="text" id="fileInputTexthold" name="fileInputTexthold" readonly
+                                style="display: none;">
+                            <label>模型總共要執行幾次(1-10):&nbsp;<input type="number" name="times" min="1" max="10" value="1"></label>
+                            <label>要運行的關卡是?(點擊下方圖片)</label>
+                            <div class="stage-selector">
+                                <!-- Stage 1 -->
+                                <input type="radio" name="selectedStage" value="1" id="stage1" class="stage-radio"
+                                    checked>
+                                <label for="stage1" class="stage-label">
+                                    <div class="stage-image" style="background-position: 0% 0%;"></div>
+                                    關卡 1
+                                </label>
+
+                                <!-- Stage 2 -->
+                                <input type="radio" name="selectedStage" value="2" id="stage2" class="stage-radio">
+                                <label for="stage2" class="stage-label">
+                                    <div class="stage-image" style="background-position: 25% 0%;"></div>
+                                    關卡 2
+                                </label>
+
+                                <!-- Stage 3 -->
+                                <input type="radio" name="selectedStage" value="3" id="stage3" class="stage-radio">
+                                <label for="stage3" class="stage-label">
+                                    <div class="stage-image" style="background-position: 50% 0%;"></div>
+                                    關卡 3
+                                </label>
+
+                                <!-- Stage 4 -->
+                                <input type="radio" name="selectedStage" value="4" id="stage4" class="stage-radio">
+                                <label for="stage4" class="stage-label">
+                                    <div class="stage-image" style="background-position: 75% 0%;"></div>
+                                    關卡 4
+                                </label>
+
+                                <!-- Stage 5 -->
+                                <input type="radio" name="selectedStage" value="5" id="stage5" class="stage-radio">
+                                <label for="stage5" class="stage-label">
+                                    <div class="stage-image" style="background-position: 100% 0%;"></div>
+                                    關卡 5
+                                </label>
+                            </div>
+                            <input type="submit" value="運行成果">
+                        </form>
+                    </div>
+                    <a style="position: absolute;right: 10px;bottom: 10px;"
+                        href="https://www.pygame.org/docs/">Pygame©</a>
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- 模型介紹部分 -->
+        <div class="content">
+            <div class="top-banner">
+                <h2 id="top_banner">以上請先閱讀</h2>
+            </div>
+            <div id="IntroductionSection" style="display:none;">
+
+                <div id="KNN_Introduction" class="Introduction" style="display:none;">
+                    <h3>KNN (K-Nearest Neighbor , K-近鄰演算法)</h3>
+                    <p>
+                        <br>
+
+                        屬於一種簡單且直觀的
+                        監督式學習演算法。<br>它的基本概念是對於每一個待預測的資料點，<br>根據距離選擇離它最近的K個資料點，然後根據這些鄰近的資料點的標籤進行預測。
+                        <br><br>
+                        <iframe width="560" height="315"
+                            src="https://www.youtube.com/embed/0p0o5cmgLdE?si=N51gQWVhZqfYOVhL"
+                            title="YouTube video player" frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture;"
+                            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
+                        </iframe>
+                        <br>
+                        <a
+                            href="https://medium.com/@SCU.Datascientist/python學習筆記-knn-k-nearest-neighbor-531a95336f71">參考頁面</a>
+                    </p>
+                </div>
+                <div id="DecisionTree_Introduction" class="Introduction" style="display:none;">
+
+                    <h3>決策樹 (Decision Tree)</h3>
+                    <p>是一種監督式學習演算法。通過將資料逐步分割成子集，最後形成樹狀結構來進行預測。<br>
+                        在樹狀結構中，每個內部節點代表一個特徵的判斷條件，而每個葉節點代表最終的預測結果。<br>
+                        <a
+                            href="https://medium.com/@SCU.Datascientist/python%E5%AD%B8%E7%BF%92%E7%AD%86%E8%A8%98-%E6%B1%BA%E7%AD%96%E6%A8%B9-decision-tree-b9acf11f0f84">參考頁面</a>
+                    </p>
+                </div>
+                <div id="RandomForest_Introduction" class="Introduction" style="display:none;">
+                    <h3>隨機森林 - Random Forest</h3>
+                    <p>
+                        結合多棵不同的決策樹所組成的機器學習模型。<br>
+                        屬於結合數個「弱學習器」(Decisiontree)搭配演算法(Bagging)<br>
+                        建構出的一個更強的模型：「強學習器」(Random Forest)<br><br>
+
+                        引導聚集算法 - Bootstrap Aggregation(Bagging)<br>
+                        運用在隨機森林中的一種演算法，運用自助抽樣法的方式從一個資料集分成數個子資料集。<br>
+                        這樣的做法讓隨機森林得以運用此演算法建立的子資料集為基礎建立多個決策樹。<br><br>
+
+                        可以說
+                        Bootstrap Aggregation(Bagging) + Decision Tree → Random Forest<br>
+                        引導聚集算法 + 決策樹 造就了隨機森林<br>
+
+                        是利用了集成學習(Ensemble Learning)的一種機器學習模型。<br>
+
+                    </p>
+                    <img style="height: 250px;  " src="image/RandomForest.png">
+                    <p>
+                        實際做法為:<br>
+                        隨機從資料集中取出樣本，並以這些隨機選取的樣本先構築好數顆決策樹。<br>
+                        1.在每一個決策樹中隨機挑選特徵節點<br>
+                        2.同時在每棵決策樹以特徵分割的方式劃分此特徵節點<br>
+                        在多次執行以上1、2點的動作後，<br>
+                        在最後將所有決策樹的預測結果統整起來做結果分析。<br>
+                    </p>
+                    <br>
+                    <a href="https://medium.com/chung-yi/ml入門-十七-隨機森林-random-forest-6afc24871857">Chung-Yi的Medium-隨機森林(Random
+                        Forest)
+
+                    </a>
+                    <br>
+                    <a
+                        href="https://tomohiroliu22.medium.com/機器學習-學習筆記系列-37-隨機森林回歸-random-forest-regressor-a0f7a57c06c4">劉智皓
+                        (Chih-Hao Liu)的Medium-隨機森林(Random Forest)
+
+                    </a> <br>
+                    <a href="https://en.wikipedia.org/wiki/Bootstrap_aggregating">引導聚集算法wiki
+
+                    </a>
+
+                </div>
+                <div id="LinearSVC/SVR_Introduction" class="Introduction" style="display:none;">
+
+                    <h3>linearSVC - Linear Support Vector Classification & LinearSVR - Linear Support Vector
+                        Regression<br>
+                    </h3>
+                    <h3>線性支援向量分類/回歸</h3>
+                    <p>專門用於線性問題的SVM，僅能使用線性核函數（linear kernel）基礎依賴的資料庫是Liblinear。
+                        <br>
+
+                        是一種懲罰函數和損失函數的選擇上靈活的模型，較適合大量樣本。<br>
+                        這個類別既支援稠密輸入又支援稀疏輸入，並且多類別支援是根據一對多方案處理的。<br>
+
+                        在一些大型數據中，使用或不使用非線性映射會產生類似的效果。<br>
+                        但若不計核函數的情況下，我們若是透過linearSVC/linearSVR能更快速地訓練那些龐大的資料集。<br>
+                        其中因為Liblinear庫中使用的坐標下降法(coordinate descent）
+                        <br>
+                    </p>
+
+                    <img style="height: 250px; width:250px; " src="image/DoordinateDescent.png">
+
+                    <p>
+                        <br>使它在數據規模較大，並且問題是線性可分的情況下，<br>
+                        運算的過程會較快到達最優函式，所以相比於SVC/SVR而言效率會較高。
+                        <br>
+                        不過與SVC/SVR（基於Libsvm）不同的是，
+                        LinearSVC/SVR（基於liblinear）不提供支援向量。<br>
+                        十分類似於參數kernel= linear的SVC/SVR，但兩者之間有些許的優異性在。<br>
+                    </p>
+                    <h2>SVC vs LinearSVC</h2>
+                    <table>
+                        <tr>
+                            <th>特性</th>
+                            <th>SVC(kernel='linear')</th>
+                            <th>LinearSVC</th>
+                        </tr>
+                        <tr>
+                            <td>支持的核函數</td>
+                            <td>只使用 `linear`</td>
+                            <td>只使用 `linear`</td>
+                        </tr>
+                        <tr>
+                            <td>適用數據規模</td>
+                            <td>小規模數據（< 1 萬）</td>
+                            <td>大規模數據（> 1 萬）</td>
+                        </tr>
+                        <tr>
+                            <td>訓練算法</td>
+                            <td>SMO（序列最小優化）</td>
+                            <td>Liblinear（坐標下降）</td>
+                        </tr>
+                        <tr>
+                            <td>訓練速度</td>
+                            <td>慢</td>
+                            <td>快</td>
+                        </tr>
+                        <tr>
+                            <td>內存消耗</td>
+                            <td>高</td>
+                            <td>低</td>
+                        </tr>
+                        <tr>
+                            <td>支持概率估計</td>
+                            <td>支持 `probability=True`</td>
+                            <td>不支持</td>
+                        </tr>
+                        <tr>
+                            <td>支持 L1 正則化</td>
+                            <td>否</td>
+                            <td>是（可選 `penalty='l1'`）</td>
+                        </tr>
+                    </table>
+
+                    <h2>SVR vs LinearSVR</h2>
+                    <table>
+                        <tr>
+                            <th>特性</th>
+                            <th>SVR(kernel='linear')</th>
+                            <th>LinearSVR</th>
+                        </tr>
+                        <tr>
+                            <td>支持的核函數</td>
+                            <td>只使用 `linear`</td>
+                            <td>只使用 `linear`</td>
+                        </tr>
+                        <tr>
+                            <td>適用數據規模</td>
+                            <td>小規模數據（< 1 萬）</td>
+                            <td>大規模數據（> 1 萬）</td>
+                        </tr>
+                        <tr>
+                            <td>訓練算法</td>
+                            <td>SMO（序列最小優化）</td>
+                            <td>Liblinear（坐標下降）</td>
+                        </tr>
+                        <tr>
+                            <td>訓練速度</td>
+                            <td>慢</td>
+                            <td>快</td>
+                        </tr>
+                        <tr>
+                            <td>內存消耗</td>
+                            <td>高</td>
+                            <td>低</td>
+                        </tr>
+                        <tr>
+                            <td>支持 L1 正則化</td>
+                            <td>否</td>
+                            <td>是（可選 `penalty='l1'`）</td>
+                        </tr>
+                    </table>
+                    <a href="https://en.wikipedia.org/wiki/Coordinate_descent">Coordinate descent</a>
+                    <br>
+                    <a href="https://www.csie.ntu.edu.tw/~cjlin/liblinear/">LIBLINEAR A Library for Large Linear
+                        Classification
+                    </a>
+                    <span> & </span>
+                    <a href="https://www.csie.ntu.edu.tw/~cjlin/libsvm/">LIBSVM -- A Library for Support Vector
+                        Machines</a>
+                    <p>LIBLINEAR、LIBSVM兩個開源的機器學習資料庫，均由台灣大學開發被scikit-learm引進並使用</p>
+
+                </div>
+                <div id="LogisticRegression/Linear_Introduction" class="Introduction" style="display:none;">
+                    <h3>Linear regression __ Logistic Regression</h3>
+                    <h3>線性回歸</h3>
+                    <p>線性回歸 (Linear regression)是一種監督式學習演算法，<br>將標記的資料集中學習找出一條誤差最小的直線，來預測目標變量。<br><br>
+
+                        線性回歸的公式<br>
+                    </p>
+                    <h3>y = &beta;<sub>0</sub> + &beta;<sub>1</sub> x</h3>
+
+                    <p>
+                        y 是預測的目標的變量<br>
+                        x 為自變量或特徵<br>
+                        β~0~ 是截距項，回歸線及y軸的交點<br>
+                        β~1~ 是斜率，目標變量的變化量<br>
+                    </p>
+
+                    <h3>邏輯回歸(分類)</h3>
+                    <p>
+                        與線性回歸一樣都使用線性方程來描述特徵及目標變量。<br>
+                        邏輯回歸不同的是目標變量y的值介於0~1預測的結果為機率值因此主要用於分類問題，尤其是二分類問題。
+                    </p>
+                    <a href="https://medium.com/@jason8410271027/學習筆記-線性回歸-linear-regression-38b17484ee0a">Jason的Medium-線性回歸
+                    </a>
+
+                    <br>
+
+                    <a
+                        href="https://medium.com/jameslearningnote/資料分析-機器學習-第3-3講-線性分類-邏輯斯回歸-logistic-regression-介紹-a1a5f47017e5">
+                        Yeh James的Medium-邏輯斯回歸(Logistic Regression) 介紹
+                    </a>
+                </div>
+                <div id="SVM_Introduction" class="Introduction" style="display:none;">
+                    <h3>SVM (Support-vector-machine, 支援向量機)</h3>
+                    <p>
+                        是一種監督式學習演算法適用於回歸與分類問題。<br>
+                        特別是處理高維度及具有非線性邊界的分類問題。<br>
+                        其概念就是將低維度空間線性不可分的樣本映射到高維度空間，並找到一個超平面將樣本有效分割。<br>
+                        並使該超平面與資料點的間隔(Margin)最大化，用來區分不同類別的資料點。
+                    </p>
+                    <img style="height: 400px; width:400px; " src="image/SVM1.png">
+                    <img style="height: 400px; width:400px; " src="image/SVM2.png">
+                    <p>
+                        非線性可分問題SVM可以通過使用核函數(Kernel Function)<br>
+                        將資料映射到高維度的方式找到一個最適的超平面。<br>
+                        常見核函數:
+                    </p>
+                    <div style="width: 40%;margin:auto; font-size:large">
+
+                        <ul>
+                            <li>線性核 (Linear Kernel)</li>
+                            <li>多項式核 (Polynomial Kernel)</li>
+                            <li>徑向基核 (Radial Basis Function, RBF Kernel)</li>
+                        </ul>
+
+                    </div>
+                    <a href="https://medium.com/@SCU.Datascientist/機器學習筆記-支援向量機-support-vector-machine-80ad4266d592">
+                        Alex lin的Medium 支援向量機(Support Vector Machine)
+                    </a>
+                    <br>
+                    <a
+                        href="https://medium.com/jameslearningnote/資料分析-機器學習-第3-4講-支援向量機-support-vector-machine-介紹-9c6c6925856b">
+                        Yeh James的Medium 支援向量機(Support Vector Machine)介紹
+                    </a>
+                    <br>
+                    <a href="https://pyecontech.com/2020/03/24/svm/">
+                        PyInvest [機器學習首部曲] 支援向量機 SVM
+                    </a>
+                    <br>
+                    <iframe width="560" height="315" src="https://www.youtube.com/embed/9sVFd1QGOjM?si=XXi9hvj7j8V7cdRv"
+                        title="YouTube video player" frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                </div>
+            </div>
+            <div id="ShowCSV" class="Nowcsvtable" style="display: none;">記得要先案生成再案運行成果喔</div>
+            <div id="RANKSection" class="RANKSection" style="display: none;">
+                <p>RE=>回歸 CL=>分類</p>
+                <div id="RankTable" class="RandTable"></div>
+                <br>
+                <canvas class="myChart" id="myChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <script>
+        // 當拖放進表單時
+
+        const DragformContainer = document.getElementById('DragformContainer');
+        const fileInput = document.getElementById('fileInput');
+        const fileInputTexthold = document.getElementById('fileInputTexthold');
+
+        DragformContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();  // 讓區域可以接受拖拉
+        });
+
+        DragformContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const fileName = e.dataTransfer.getData('text/plain');  // 取得拖拉的檔案名稱
+            fileInput.value = fileName;  // 填入表單欄位
+            fileInputTexthold.value = fileName;
+        });
+
+
+
+    </script>
+</body>
+
+</html>

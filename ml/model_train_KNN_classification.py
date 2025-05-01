@@ -1,10 +1,12 @@
 import pickle
 import numpy as np
 import os
+import sys #運用其中的套件
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import tree
+
 path = os .path.join(os.path.dirname(__file__),"..","log")
 allfile = os.listdir(path)
 data_set = []
@@ -12,7 +14,7 @@ for file in allfile[:]:
     with open(os.path.join(path,file),"rb") as f:
         data_set.append(pickle.load(f))
         
-
+print(sys.argv[1])
 Ball_x = []
 Ball_y = []
 Vector_x = []
@@ -52,40 +54,26 @@ Command = np.array(Command)
 Command = Command.reshape(len(Command),1)
 
 # feature
-X = np.array([0,0,0,0,0])
+X = np.array([0,0,0,0,0,0])
 
-X = np.array([Ball_x,Ball_y,Vector_x,Vector_y,Direction]).T
+X = np.array([Ball_x,Ball_y,Vector_x,Vector_y,Direction,Platform]).T
 
 Y = Command[:,0]
 
 ####### KNN #######
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.1)  # 資料拆成約 7:2:1 的訓練、驗證、測試集
 x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2)
-k_range = range(1, 30)
+#k_range = range(1, 30)
 scores = []
-k_final = 0
+
+
+
+#使其接收PHP的參數
+k_final = int(sys.argv[1]) 
+
 Accuracy = 0
 F1Score = 0
 
-for k in k_range:
-    k = k + 1
-    model = KNeighborsClassifier(n_neighbors=k)
-    model.fit(x_train, y_train)
-    y_predict = model.predict(x_val)
-
-    acc = accuracy_score(y_predict, y_val)
-    print("k = ", k, "Accuracy = %.2f" % acc)
-    scores.append(acc)
-    if acc > Accuracy:
-        Accuracy = acc
-        k_final = k
-
-    fs = f1_score(y_val, y_predict, average='weighted')
-    print("k = ", k, "F1 score = %.2f" % fs)
-    scores.append(fs)
-    if fs > F1Score:
-        F1Score = fs
-        k_final = k
 
 model = KNeighborsClassifier(n_neighbors=k_final)
 model.fit(x_train, y_train)
@@ -103,28 +91,5 @@ if not os.path.isdir(path):
     os.mkdir(path)
 
 with open(os.path.join(os.path.dirname(__file__), 'save', \
-    'KNN_classification (k = {}_acc = {:.2f}_data={}).pickle'.format(k_final, Accuracy, len(X))), 'wb') as f:
+    'KNN_CL_k={}_acc={:.2f}.pickle'.format(k_final, Accuracy)), 'wb') as f:
     pickle.dump(model, f)
-
-################# Decision Tree ################
-# x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)  # 資料拆成約 8:2 的訓練、測試集
-
-# model = tree.DecisionTreeClassifier()  # max_depth=2
-# model = model.fit(x_train, y_train)
-# y_predict = model.predict(x_test)
-# Accuracy = float('{:.3f}'.format(accuracy_score(y_predict, y_test)))
-# depth = model.tree_.max_depth
-# print("depth = ", depth, "Accuracy = ", Accuracy)
-
-# F1Score = float('{:.3f}'.format(f1_score(y_test, y_predict, average='weighted')))
-# print("F1 score=", F1Score)
-
-# # save the model
-# path = os.path.join(os.path.dirname(__file__), "save")
-# if not os.path.isdir(path):
-#     os.mkdir(path)
-
-# with open(os.path.join(os.path.dirname(__file__), 'save', \
-#                        "DCT_classification_depth{}_acc={:.2f}_data={}.pickle".format(depth, Accuracy, len(X))), 'wb') as f:
-#     pickle.dump(model, f)
-###############################################
