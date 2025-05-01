@@ -1,6 +1,7 @@
 import pickle
 import numpy as np
 import os
+import sys
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.tree import DecisionTreeClassifier
@@ -66,7 +67,10 @@ Y = Command[:,0]
 
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
 
-model = DecisionTreeClassifier()
+#使其接收PHP的參數
+php_max_depth = int(sys.argv[1]) 
+
+model = DecisionTreeClassifier(max_depth=php_max_depth)
 model = model.fit(x_train, y_train)
 y_predict = model.predict(x_test)
 Accuracy = float('{:.3f}'.format(accuracy_score(y_predict,y_test)))
@@ -83,7 +87,7 @@ if not os.path.isdir(path):
     os.mkdir(path)
 
 with open(os.path.join(os.path.dirname(__file__),'save',\
-    "DCT_classification_depth={}_acc={:.2f}_data={}.pickle".format(depth, Accuracy, len(X))),'wb') as f:
+    "DCT_CL_depth={}_acc={:.2f}.pickle".format(depth, Accuracy)),'wb') as f:
     pickle.dump(model,f)
 
     

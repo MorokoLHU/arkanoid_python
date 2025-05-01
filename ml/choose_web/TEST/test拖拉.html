@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>檔案名稱拖拉選項</title>
+    <style>
+        /* 容器 */
+        /* .close 按鈕設計 */
+        .close {
+            position: absolute;
+            right: 10px;
+            /* 讓 X 按鈕位於右邊 */
+            top: 0px;
+            /* 讓 X 按鈕位於檔案名稱項目的上方 */
+            width: 8px;
+            /* 調整 X 按鈕的大小 */
+            height: 8px;
+            /* 同上 */
+            opacity: 0.3;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            opacity: 1;
+        }
+
+        .close:before,
+        .close:after {
+            position: absolute;
+            left: 6px;
+            /* 調整 X 按鈕的對齊 */
+            content: ' ';
+            height: 13px;
+            /* 調整橫線的高度 */
+            width: 2px;
+            /* 調整橫線的寬度 */
+            background-color: #ff0000;
+        }
+
+        .close:before {
+            transform: rotate(45deg);
+            /* 旋轉成斜對角線 */
+        }
+
+        .close:after {
+            transform: rotate(-45deg);
+            /* 旋轉成斜對角線 */
+        }
+
+        /* 確保 drag-item 是相對定位的，這樣可以讓 .close 使用絕對定位 */
+        .drag-item {
+            position: relative;
+            /* 確保 X 按鈕能根據 drag-item 定位 */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 50px;
+            background: linear-gradient(to right, #86b2f3, #7dd6ff);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1 0 11%;
+            text-align: center;
+        }
+
+
+        .Dragcontainer {
+            display: flex;
+            /* 設置為 flexbox 佈局 */
+            flex-direction: row;
+            /* 讓內容並排顯示 */
+
+            gap: 20px;
+            /* 設定兩個區域之間的間距 */
+        }
+
+        .drag-container {
+            background: #c8d9e9;
+            /* 淺藍漸層背景 */
+            width: 600px;
+            /* 調整容器寬度 */
+            padding: 20px;
+            border-radius: 15px;
+            /* 增加圓角半徑 */
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            /* 讓內容換行 */
+            gap: 10px;
+            /* 項目之間的間距 */
+            margin: 0 0;
+            min-height: 300px;
+        }
+
+        /* 使拖拉項目具有統一樣式 */
+        .drag-item {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 50px;
+            /* 增加圓角 */
+            background: linear-gradient(to right, #86b2f3, #7dd6ff);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1 0 11%;
+            /* 設定每個項目的寬度，大約8個一行 */
+            text-align: center;
+            /* 使文字居中 */
+        }
+
+        /* 拖拉項目 hover 效果 */
+        .drag-item:hover {
+            background-color: #e0e0e0;
+            border-color: #bbb;
+        }
+
+        /* 可放入表單區域 */
+        .dragform-container {
+            background: #fff;
+            width: 300px;
+            padding: 20px;
+            border-radius: 15px;
+            /* 增加圓角半徑 */
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            min-height: 300px;
+
+        }
+
+        /* 標籤美化 */
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            text-align: left;
+            font-size: 16px;
+            color: #333;
+        }
+
+        /* 輸入框樣式 */
+        input[type="text"] {
+            width: 100%;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        /* 拖放區域提示文字 */
+        #DragformContainer {
+            justify-content: center;
+            align-items: center;
+            min-height: 100px;
+            border: 2px dashed #007bff;
+            border-radius: 5px;
+            font-size: 16px;
+            color: #007bff;
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                /* 在螢幕寬度小於 768px 時，改為垂直排列 */
+                align-items: center;
+                /* 讓兩個區域居中 */
+            }
+
+            .drag-container,
+            .dragform-container {
+                width: 100%;
+                /* 在小螢幕上調整寬度為 100% */
+                margin-bottom: 20px;
+                /* 兩個區域之間有些許間距 */
+            }
+        }
+
+        /* 響應式設計：在非常小的螢幕（手機）上調整拖拉項目的大小 */
+        @media (max-width: 480px) {
+            .drag-item {
+                flex: 1 0 20%;
+                /* 讓每個項目在小螢幕上占 20% 的寬度 */
+                font-size: 8px;
+                /* 調小字型 */
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="Dragcontainer">
+        <!-- 左邊的拖拉區域 -->
+        <div class="drag-container" id="dragContainer">
+            <!-- 這裡會動態插入檔案名稱 -->
+        </div>
+
+        <!-- 右邊的表單區域 -->
+        <div class="dragform-container" id="DragformContainer">
+            <form id="fileForm">
+                <div class="Dragform-field">
+                    <label for="fileInput">選擇檔案：</label>
+                    <input type="text" id="fileInput" name="fileInput" placeholder="拖拉檔案名稱到這裡" readonly>
+                    <input type="submit" value="開始訓練">
+                </div>
+                <!-- 你可以根據需要添加更多的表單欄位 -->
+            </form>
+        </div>
+    </div>
+
+    <script>
+        async function fetchFileNames() {
+            try {
+                const response = await fetch('test拖拉.php'); // PHP檔案來處理檔案名稱的API
+                const data = await response.json();
+
+                if (data.error) {
+                    alert(`錯誤代碼: ${data.error_code}\n錯誤訊息: ${data.message}`);
+                    return;
+                }
+
+                const fileNames = data.file_names;
+                if (!Array.isArray(fileNames)) {
+                    throw new Error('file_names 不是陣列');
+                }
+
+                const dragContainer = document.getElementById('dragContainer');
+
+                fileNames.forEach(name => {
+                    // 建立檔案名稱選項
+                    const div = document.createElement('div');
+                    div.classList.add('drag-item');
+                    div.textContent = name;  // 顯示檔案名稱 (不包括附檔名)
+                    div.setAttribute('draggable', 'true');
+                    div.setAttribute('data-filename', name);
+
+                    // 建立刪除 X 按鈕並放置在右上角
+                    const closeBtn = document.createElement('a');
+                    closeBtn.classList.add('close');
+                    closeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();  // 防止觸發拖拉事件
+                        div.remove();  // 刪除該檔案項目
+                    });
+
+                    // 將刪除按鈕加入檔案名稱項目
+                    div.appendChild(closeBtn);
+
+                    // 當用戶拖拉這個檔案選項時的處理
+                    div.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', name);  // 存儲拖拉的檔案名稱
+                    });
+
+                    dragContainer.appendChild(div);
+                });
+            } catch (error) {
+                alert('無法取得檔案名稱: ' + error.message);
+            }
+        }
+
+
+
+        // 當拖放進表單時
+        const DragformContainer = document.getElementById('DragformContainer');
+        const fileInput = document.getElementById('fileInput');
+
+        DragformContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();  // 讓區域可以接受拖拉
+        });
+
+        DragformContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const fileName = e.dataTransfer.getData('text/plain');  // 取得拖拉的檔案名稱
+            fileInput.value = fileName;  // 填入表單欄位
+        });
+
+        // 頁面載入時加載檔案名稱
+        window.onload = fetchFileNames;
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Model RANK</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        #myChart {
+            width: 80%; /* 控制圖表寬度為螢幕的80% */
+            height: 400px; /* 設定固定的高度 */
+        }
+        .menu-container {
+            margin-bottom: 20px;
+        }
+
+        .menu-button {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="menu-container">
+        <h2 class="menu-title">Menu</h2>
+        <button class="menu-button" id="RANKModelBtn" onclick="loadRank()">Model RANK</button>
+    </div>
+
+    <div id="tableContainer"></div> <!-- 放表格資料 -->
+    <canvas id="myChart" ></canvas>
+
+    <script>
+        let myChart; // 定義為全域變數
+
+        function loadRank() {
+            // 1. 載入表格資料
+            fetch('generate_rank.php')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('tableContainer').innerHTML = html;
+                });
+
+            // 2. 載入圖表資料
+            fetch('get_data.php')
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('myChart').getContext('2d');
+
+                    // 如果已存在圖表，先摧毀
+                    if (myChart instanceof Chart) {
+                        myChart.destroy();
+                    }
+
+                    // 建立新圖表
+                    myChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.labels,
+                            datasets: [
+                                {
+                                    label: '執行次數',
+                                    data: data.total_runs,
+
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                    yAxisID: 'y2'
+                                },
+                                {
+
+                                    label: '通關次數',
+                                    data: data.passtimes,
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                    yAxisID: 'y2'
+                                }, 
+                                {
+
+                                    label: '通關率',
+                                    data: data.pass_rate,
+                                    type:'line',
+                                    borderColor: 'rgba(255, 99, 132, 0.5)',
+                                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                                    yAxisID: 'y1'
+                                },
+
+                            ]
+                        },
+                        options: {
+                            responsive: false,
+
+                            scales: {
+                                y1: {
+                                    position: 'right',
+                                    beginAtZero: true,
+                                    title: { display: true, text: '比率 (%)' }
+                                },
+                                y2: {
+                                    position: 'left',
+                                    beginAtZero: true,
+                                    title: { display: true, text: '次數' },
+                                    grid: { drawOnChartArea: false }
+                                }
+                            }
+                        }
+                    });
+                });
+        }
+    </script>
+
+</body>
+
+</html>

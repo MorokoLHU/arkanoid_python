@@ -1,7 +1,7 @@
 import random
-
+import csv
+import os
 import pygame
-
 from mlgame.game.paia_game import GameStatus, GameResultState, PaiaGame
 from mlgame.view.decorator import check_game_progress, check_game_result
 from mlgame.view.view_model import create_text_view_data, Scene, create_scene_progress_data
@@ -20,7 +20,7 @@ class Arkanoid(PaiaGame):
         self._hard_brick = []
         self._brick = []
         self._create_init_scene()
-
+        
     def update(self, commands):
         ai_1p_cmd = commands[self.ai_clients()[0]["name"]]
         command = (PlatformAction(ai_1p_cmd)
@@ -150,12 +150,52 @@ class Arkanoid(PaiaGame):
     def get_game_result(self):
         if self._game_status == GameStatus.GAME_PASS:
             self.game_result_state = GameResultState.FINISH
+            
+            
+        # 要寫入的資料
+        result_data = {
+            "stage":self.level,
+            "brick_remain": len(self._brick) + 2 * len(self._hard_brick),
+            "catch_count": self._ball.hit_platform_times,
+            "state": self.game_result_state,
+            "run_sec":self.frame_count / 100
+
+        }
+        
+        # 將資料寫入csv檔
+        result_folder = os.path.join(os.path.dirname(__file__), "..","result")
+        os.makedirs(result_folder, exist_ok=True) 
+        
+        csv_path = os.path.join(result_folder, "result.csv")
+        file_exists = os.path.isfile(csv_path)
+        
+        #寫入csv
+        with open(csv_path, mode='a', newline='') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=result_data.keys())
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow(result_data)
+            
+        # 執行中-將資料寫入csv檔
+        result_folder = os.path.join(os.path.dirname(__file__), "..","result")
+        os.makedirs(result_folder, exist_ok=True) 
+        
+        csv_path = os.path.join(result_folder, "Nowresult.csv")
+        file_exists = os.path.isfile(csv_path)
+        
+        #執行中-寫入csv
+        with open(csv_path, mode='a', newline='') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=result_data.keys())
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow(result_data)
+        
         return {
             "frame_used": self.frame_count,
             "state": self.game_result_state,
             "attachment": [
                 {
-                    "player": self.ai_clients()[0]['name'],
+                    "stateNow": self.game_result_state,
                     "brick_remain": len(self._brick) + 2 * len(self._hard_brick),
                     "count_of_catching_ball": self._ball.hit_platform_times
 
@@ -193,10 +233,10 @@ class Arkanoid(PaiaGame):
         self._create_bricks(self.level)
 
     def _create_moves(self):
+        rand_x = random.randint(0, 199)
+        rand_y = random.randint(0, 395)
         self._group_move = pygame.sprite.RenderPlain()
         enable_slide_ball = False if self.difficulty == "EASY" else True
-        rand_x = random.randint(0, 199)
-        rand_y = random.randint(0, 499)
         self._ball = Ball((rand_x, rand_y), pygame.Rect(0, 0, 200, 500), enable_slide_ball, self._group_move)
         self._platform = Platform((75, 400), pygame.Rect(0, 0, 200, 500), self._group_move)
 

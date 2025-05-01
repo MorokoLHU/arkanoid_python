@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart.js 多條線範例</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<h2>多條線的折線圖（Line Chart）</h2>
+
+<canvas id="myChart" width="400" height="200"></canvas>
+
+<script>
+    // 獲取 canvas 元素
+    var ctx = document.getElementById('myChart').getContext('2d');
+
+    // 創建圖表
+    var myChart = new Chart(ctx, {
+        type: 'line', // 圖表類型，這裡是折線圖
+        data: {
+            labels: ['模型A', '模型B', '模型C', '模型D'], // X軸的標籤
+            datasets: [
+                {
+                    label: '通關率 (%)',
+                    data: [75, 85, 90, 80], // 第一條線的數據
+                    borderColor: 'rgba(54, 162, 235, 1)', // 第一條線的顏色
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)', // 填充顏色
+                    fill: true, // 是否填充顏色
+                    borderWidth: 2
+                },
+                {
+                    label: '擊破磚塊率 (%)',
+                    data: [60, 70, 80, 65], // 第二條線的數據
+                    borderColor: 'rgba(255, 99, 132, 1)', // 第二條線的顏色
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)', // 填充顏色
+                    fill: fal, // 是否填充顏色
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true // Y軸從0開始
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
