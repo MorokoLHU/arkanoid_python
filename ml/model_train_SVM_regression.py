@@ -102,5 +102,5 @@ filepath = os.path.join(os.path.dirname(__file__), 'save')
 if not os.path.isdir(filepath):
     os.mkdir(filepath)
 
-with open(os.path.join(filepath, 'SVR_RE_rmse={:.2f}.pickle'.format(rmse)), 'wb') as f:
+with open(os.path.join(filepath, "SVM_RE_ker={}_C={}.pickle" .format(ker,C_value)), 'wb') as f:
     pickle.dump(model, f)

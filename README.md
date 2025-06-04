@@ -1,36 +1,4 @@
 # Arkanoid 打磚塊
-在網頁上運用AI模型藉由Arkanoid展現訓練結果，本專案搭配Wampserver、Docker、Larvel、Composer等網頁框架或php軟體套件，才可進行PHP腳本的運作
-專案網頁位於localhost/index/ml/choose_web
-
-若您是下載的User開始使用本專案之前請確保
-1.本電腦有安裝3.9.x版本的python     Python3.9
-2.已在3.9.x的python環境中運用pip安裝好mlgame    MLgame-Release
-3.確保運行此網頁時可以正常運作php-Script
-(例如wampserver：請將本方案解壓縮至X:xxx/wamp64/www之中)
-
-(或是僅安裝php.exe：切換到index/ml/choose_web資料夾後使用php -S localhost:8000 (確保8000port是可用的)即可運行專案 )
-
-以上三點OK請於preset settings頁面設定存在MLGAME的3.9.x的python的路徑。
-(僅一次即可)
-ex：C:\Users\xxx\Documents\python\.venv\Scripts\python.exe
-
-Wampserver請將本專案下載後放置在wamp64/www的路徑中
-```html=
-<!--僅wampserver有需要可使用-->
-<!--於wamp64/www中建立一個index.html，把此邊內容貼上去-->
-<!--將會自動跳轉至專案網頁-->
-<!DOCTYPE html>
-<html>
-
-<head>
-    <meta http-equiv="refresh" content="0;url=/index/ml/choose_web" />
-</head>
-<body>
-</body>
-</html>
-```
-
-
 
 <img src="https://raw.githubusercontent.com/PAIA-Playful-AI-Arena/Paia-Desktop/master/media/arkanoid.svg" alt="logo" width="100"/> 
 
@@ -43,6 +11,8 @@ Wampserver請將本專案下載後放置在wamp64/www的路徑中
 
 <img src="https://camo.githubusercontent.com/a2a0ed0f4e012779cdf3d7fdeda6371c1a4cb3483e91c56442db5d3b56440798/68747470733a2f2f692e696d6775722e636f6d2f627271615738352e676966" height="500"/>
 
+# 更新內容(2.3.1)
+1. 更新程式碼內容，以運行於 MLGame 9.5.*以後版本
 
 ---
 

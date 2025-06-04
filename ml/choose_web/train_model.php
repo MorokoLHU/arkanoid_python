@@ -1,11 +1,10 @@
-
 <?php
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // 取得使用者選擇的模型
+    // 取得使用者選擇的模型與任務類型
     $model = $_POST["model"];
-    
     $task_type = $_POST["task_type"];
-    // 設定 Python 檔案路徑
+
+    // Python 腳本對應表
     $python_scripts = [
         "DecisionTree" => [
             "classification" => "../model_train_Decisiontree_classification.py",
@@ -19,20 +18,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             "classification" => "../model_train_RandomForest_classification.py",
             "regression" => "../model_train_RandomForest_regression.py"
         ],
-        "LinearSVC" => [
+        "LinearSVM" => [
             "classification" => "../model_train_linearSVC_classification.py",
-            "regression" => null // LinearSVC 通常不適用於 Regression
-        ],
-        "LinearSVR" => [
-            "classification" => null, // LinearSVR 是用於 Regression，不適用於 Classification
             "regression" => "../model_train_linearSVR_regression.py"
         ],
         "LogisticRegression" => [
             "classification" => "../model_train_LogisticRegression_classification.py",
-            "regression" => null // Logistic Regression 主要用於分類
+            "regression" => null
         ],
         "LinearRegression" => [
-            "classification" => null, // Linear Regression 只適用於 Regression
+            "classification" => null,
             "regression" => "../model_train_Linear_regression.py"
         ],
         "SVM" => [
@@ -40,66 +35,63 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             "regression" => "../model_train_SVM_regression.py"
         ]
     ];
+
+    // 確認是否有指定的腳本
+    if (!isset($python_scripts[$model][$task_type]) || !$python_scripts[$model][$task_type]) {
+        die("<h3>錯誤：未支援的模型或任務類型！</h3>");
+    }
+
     $script_path = $python_scripts[$model][$task_type];
 
-    if (isset($python_scripts[$model][$task_type])) {
-        $script_name = $python_scripts[$model][$task_type]; // 取得對應的 Python 腳本
-
-        
-        // 確保腳本存在
-        if (!file_exists($script_path)) {
-            die("<h3>錯誤：找不到 Python 腳本！</h3>");
-        }
-        // 初始化參數變數
-        $params = [];
-    
-        // 根據選擇的模型，獲取額外的參數
-        if ($model == "KNeighbors") {
-            $k_value = $_POST["k_value"];
-            $params[] = escapeshellarg($k_value);
-        } elseif ($model == "DecisionTree") {
-            $max_depth = $_POST["max_depth"];
-            $params[] = escapeshellarg($max_depth);
-        } elseif ($model == "RandomForest") {
-            $max_depth = $_POST["max_depth"];
-            $random_state = $_POST["random_state"];
-            $n_estimators = $_POST["n_estimators"];
-            $params[] = escapeshellarg($max_depth);
-            $params[] = escapeshellarg($random_state);
-            $params[] = escapeshellarg($n_estimators);
-        } elseif ($model == "LinearSVC") {
-            $svc_C = $_POST["svc_C"];
-            $params[] = escapeshellarg($svc_C);
-        } elseif ($model == "LinearSVR") {
-            $svr_C = $_POST["svr_C"];
-            $svr_epsilon = $_POST["svr_epsilon"];
-            $params[] = escapeshellarg($svr_C);
-            $params[] = escapeshellarg($svr_epsilon);
-        } elseif ($model == "LogisticRegression") {
-            $logistic_C = $_POST["logistic_C"];
-            $params[] = escapeshellarg($logistic_C);
-        } elseif ($model == "LinearRegression") {
-            $linear_fit_intercept = $_POST["linear_fit_intercept"];
-            $params[] = escapeshellarg($linear_fit_intercept);
-        } elseif ($model == "SVM") {
-            $svm_kernel = $_POST["svm_kernel"];
-            $svm_C = $_POST["svm_C"];
-            $params[] = escapeshellarg($svm_kernel);
-            $params[] = escapeshellarg($svm_C);
-        }
-        
-        $Pylocation = trim(file_get_contents("user_pypath.txt"));
-
-        // 執行 Python 腳本，並傳遞參數
-        $command = "\"{$Pylocation}\" " . escapeshellarg($script_name) . " " . implode(" ", $params);
-        $output = shell_exec($command);
-        
-        echo "<h3>訓練結果：</h3>";
-        echo "<p>$output</p>";
-        echo "<br><p>🚩點擊Run Model去試試吧!<br><img id=\"happyturn\"class=\"happyturn\" src=\"image/Happy.png\"></p>";
-    } else {
-        echo "<h3>錯誤：無效的模型選擇！</h3>";
+    // 檢查腳本是否存在
+    if (!file_exists($script_path)) {
+        die("<h3>錯誤：找不到 Python 腳本！</h3>");
     }
-    
+
+    // 收集參數
+    $params = [];
+
+    switch ($model) {
+        case "KNeighbors":
+            $params[] = escapeshellarg($_POST["k_value"]);
+            break;
+        case "DecisionTree":
+            $params[] = escapeshellarg($_POST["max_depth"]);
+            break;
+        case "RandomForest":
+            $params[] = escapeshellarg($_POST["max_depth"]);
+            $params[] = escapeshellarg($_POST["random_state"]);
+            $params[] = escapeshellarg($_POST["n_estimators"]);
+            break;
+        case "LinearSVM":
+            if ($task_type === "classification") {
+                $params[] = escapeshellarg($_POST["svm_C"]);
+            } elseif ($task_type === "regression") {
+                $params[] = escapeshellarg($_POST["svm_C"]);
+                $params[] = escapeshellarg($_POST["svm_epsilon"]);
+            }
+            break;
+        case "LogisticRegression":
+            $params[] = escapeshellarg($_POST["logistic_C"]);
+            break;
+        case "LinearRegression":
+            $params[] = escapeshellarg($_POST["linear_fit_intercept"]);
+            break;
+        case "SVM":
+            $params[] = escapeshellarg($_POST["svm_kernel"]);
+            $params[] = escapeshellarg($_POST["svm_C"]);
+            break;
+    }
+
+    // 讀取 Python 執行路徑
+    $Pylocation = trim(file_get_contents("user_pypath.txt"));
+
+    // 組成指令
+    $command = "\"{$Pylocation}\" " . escapeshellarg($script_path) . " " . implode(" ", $params);
+    $output = shell_exec($command);
+
+    echo "<h3>訓練結果：</h3>";
+    echo "<p>$output</p>";
+    echo "<br><p>🚩點擊Run Model去試試吧!<br><img id=\"happyturn\"class=\"happyturn\" src=\"image/Happy.png\"></p>";
 }
 ?>

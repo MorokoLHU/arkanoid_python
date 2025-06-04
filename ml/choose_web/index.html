@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>選擇機器學習模型</title>
-    <link href="styles.css" rel="stylesheet" type="text/css" />
+    <link href="styles.css?123" rel="stylesheet" type="text/css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
 
@@ -15,9 +15,10 @@
             CreateStopPOST();
             MenuBtnactive();
             RUNMLplay();
-            fetchpylocationset()
-            downloadcheck()
-            ShowMLplayform()
+            fetchpylocationset();
+            downloadcheck();
+            ShowMLplayform();
+
         });
         function showParams() {
             var model = document.getElementById("model").value;
@@ -28,11 +29,12 @@
             var allParams = ["knn_params",
                 "decision_tree_params",
                 "random_forest_params",
-                "linearSVC_params",
-                "linearSVR_params",
+                "linearSVM_classification_params",
+                "linearSVM_regression_params",
                 "logisticRegression_params",
                 "linear_regression_params",
                 "SVM_params"
+
             ];
 
             allParams.forEach(function (id) {
@@ -65,14 +67,9 @@
                 document.getElementById("random_forest_params").style.display = "block";
                 document.getElementById("RandomForest_Introduction").style.display = "block";
 
-            } else if (model === "LinearSVC") {
-                document.getElementById("linearSVC_params").style.display = "block";
+            } else if (model === "LinearSVM") {
+                document.getElementById("linearSVM_classification_params").style.display = "block";
                 document.getElementById("LinearSVC/SVR_Introduction").style.display = "block";
-
-            } else if (model === "LinearSVR") {
-                document.getElementById("linearSVR_params").style.display = "block";
-                document.getElementById("LinearSVC/SVR_Introduction").style.display = "block";
-
             } else if (model === "LogisticRegression") {
                 document.getElementById("logisticRegression_params").style.display = "block";
                 document.getElementById("LogisticRegression/Linear_Introduction").style.display = "block";
@@ -89,15 +86,27 @@
             //<label for="task_type">Regression only! </label>
             //<label for="task_type">classification only! </label>
 
-            if (model === "LinearSVC" || model === "LogisticRegression") {
+            if (model === "LogisticRegression") {
                 taskTypeSelect.innerHTML = '<option value="classification">classification</option>';
                 taskTypeLabel.innerHTML = "classification only!";
-            } else if (model === "LinearSVR" || model === "LinearRegression") {
-                taskTypeSelect.innerHTML = '<option value="regression">Regression</option>';
-                taskTypeLabel.innerHTML = "Regression only!";
-            } else {
-                taskTypeSelect.innerHTML = '<option value="classification">classification</option><option value="regression">Regression</option>';
-                taskTypeLabel.innerHTML = 'Regression & classification?'
+            } else if (model === "LinearRegression") {
+                taskTypeSelect.innerHTML = '<option value="regression">regression</option>';
+                taskTypeLabel.innerHTML = "regression only!";
+            }
+            else {
+                taskTypeSelect.innerHTML = '<option value="classification">classification</option><option value="regression">regression</option>';
+                taskTypeLabel.innerHTML = 'classification or regression?'
+            }
+        }
+        function linearSVMchange() {
+            var model = document.getElementById("model").value;
+            var taskTypeSelect = document.getElementById("task_type");
+            if (taskTypeSelect.value === "classification" && model === "LinearSVM") {
+                document.getElementById("linearSVM_classification_params").style.display = "block";
+                document.getElementById("linearSVM_regression_params").style.display = "none";
+            } else if (taskTypeSelect.value === "regression" && model === "LinearSVM") {
+                document.getElementById("linearSVM_regression_params").style.display = "block";
+                document.getElementById("linearSVM_classification_params").style.display = "none";
             }
         }
         // 根據選擇的模型，更新 task_type 的可選項
@@ -156,7 +165,8 @@
         function MenuBtnactive() {
             const menuButtons = document.querySelectorAll('.menu-button');
             const topBanner = document.getElementById('top_banner');
-            const wrappertext = document.getElementById('wrappertext')
+            const wrappertext = document.getElementById('wrappertext');
+            document.getElementById('model').selectedIndex = 1;
             menuButtons.forEach(button => {
                 button.addEventListener('click', function () {
                     // 先清除所有按鈕的 active
@@ -177,7 +187,7 @@
                         wrappertext.innerHTML = "以Pygame-Arkanoid去做模型的學習成果展示!!";
                         topBanner.innerHTML = "結果展示";
                     } else if (this.id === "RANKModelBtn") {
-                        // 如果還有第三種
+                        // 
                         showSections(["RANKSection"]);
                         wrappertext.innerHTML = "各模型的結果展示";
                         topBanner.innerHTML = "模型排名";
@@ -206,7 +216,7 @@
         // 根據選Menu所選擇的按鈕做不同的顯示
         async function fetchFileNames() {
             try {
-                const response = await fetch('DragForm.php'); // 抓檔案清單
+                const response = await fetch('DragForm.php'); // 這裡呼叫的是 PHP 檔案
                 const data = await response.json();
 
                 if (data.error) {
@@ -220,18 +230,21 @@
                 }
 
                 // 👉 依字數長短排序（長的在前）
-                fileNames.sort((a, b) => b.length - a.length);
+                fileNames.sort((a, b) => b.name.length - a.name.length);
 
                 const dragContainer = document.getElementById('dragContainer');
                 dragContainer.innerHTML = ''; // 清空原本的項目
 
-                fileNames.forEach(name => {
+                fileNames.forEach(file => {
                     // 建立 drag-item
                     const div = document.createElement('div');
                     div.classList.add('drag-item');
-                    div.textContent = name;  // 顯示檔名
+                    if (file.highlight) {
+                        div.classList.add('highlight-row'); // ✅ 套用 highlight 樣式
+                    }
+                    div.textContent = file.name;
                     div.setAttribute('draggable', 'true');
-                    div.setAttribute('data-filename', name);
+                    div.setAttribute('data-filename', file.name);
 
                     // 建立 X 按鈕
                     const closeBtn = document.createElement('a');
@@ -243,7 +256,7 @@
                         e.stopPropagation();  // 不觸發拖拉
                         e.preventDefault();  // 防止跳轉
 
-                        const confirmDelete = confirm(`確定要刪除 ${name} 嗎？`);
+                        const confirmDelete = confirm(`確定要刪除 ${file.name} 嗎？`);
                         if (!confirmDelete) return;
 
                         try {
@@ -252,13 +265,13 @@
                                 headers: {
                                     'Content-Type': 'application/json'
                                 },
-                                body: JSON.stringify({ filename: name })
+                                body: JSON.stringify({ filename: file.name })
                             });
 
                             const result = await deleteResponse.json();
 
                             if (result.success) {
-                                alert(`檔案 ${name} 已刪除`);
+                                alert(`檔案 ${file.name} 已刪除`);
                                 div.remove();  // 成功後刪除畫面上的項目
                             } else {
                                 alert(`刪除失敗: ${result.message}`);
@@ -272,15 +285,17 @@
 
                     // 設定拖拉開始
                     div.addEventListener('dragstart', (e) => {
-                        e.dataTransfer.setData('text/plain', name);
+                        e.dataTransfer.setData('text/plain', file.name);
                     });
 
                     dragContainer.appendChild(div);
                 });
+
             } catch (error) {
                 alert('無法取得檔案名稱: ' + error.message);
             }
         }
+
         // 抓取save中所擁有的檔案名稱以JSON存取，轉換為選項，並加上刪除按鈕
         async function fetchpylocationset() {
             document.getElementById('Pylocation_set').addEventListener('submit', function (e) {
@@ -324,16 +339,30 @@
         let myChart; // 定義為全域變數
 
         function loadRank() {
-            resetCanvas()
+            resetCanvas();
             // 1. 載入表格資料
-            fetch('generate_rank.php')
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('RankTable').innerHTML = html;
-                });
-
+            updateTable('all');
             // 2. 載入圖表資料
-            fetch('get_data.php')
+            loadCanvas();
+            document.getElementById('Stage_select').selectedIndex = 0;
+
+        }
+        function resetCanvas() {
+            const oldCanvas = document.getElementById("myChart");
+            if (oldCanvas) {
+                const parent = oldCanvas.parentNode;
+                oldCanvas.remove();
+
+                const newCanvas = document.createElement("canvas");
+                newCanvas.id = "myChart";
+                newCanvas.className = "myChart";
+                parent.appendChild(newCanvas);
+            }
+        }
+        function loadCanvas(stage = 'all') {
+            resetCanvas();
+            const url = `get_data.php?stage=${encodeURIComponent(stage)}`;
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     const ctx = document.getElementById('myChart').getContext('2d');
@@ -361,9 +390,17 @@
 
                                     label: '通關次數',
                                     data: data.passtimes,
-                                    borderColor: 'rgba(75, 192, 192, 1)',
-                                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                    borderColor: 'rgba(0, 200, 83, 1)',
+                                    backgroundColor: 'rgba(0, 200, 83, 0.3)',
                                     yAxisID: 'y2'
+                                },
+                                {
+                                    label: '磚塊擊破率',
+                                    data: data.break_rate,
+                                    type: 'line',
+                                    borderColor: 'rgba(255, 255, 0, 1)',
+                                    backgroundColor: 'rgba(255, 128, 0, 0.7)',
+                                    yAxisID: 'y1'
                                 },
                                 {
 
@@ -397,20 +434,15 @@
                     });
                 });
         }
-        function resetCanvas() {
-            const oldCanvas = document.getElementById("myChart");
-            if (oldCanvas) {
-                const parent = oldCanvas.parentNode;
-                oldCanvas.remove();
 
-                const newCanvas = document.createElement("canvas");
-                newCanvas.id = "myChart";
-                newCanvas.className = "myChart";
-                parent.appendChild(newCanvas);
-            }
+        function updateTable(stage) {
+            fetch('rank_Table.php?stage=' + stage)
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('RankTable').innerHTML = html;
+                });
         }
         function downloadcheck() {
-
             document.getElementById('downloadcheck').addEventListener('change', function () {
                 const formDiv = document.getElementById('Pylocation_set');
                 formDiv.style.display = this.checked ? 'none' : 'block';
@@ -424,12 +456,14 @@
                 document.getElementById('happyturn').style.transform = flipped ? 'scaleX(-1)' : 'scaleX(1)';
             }, 1000);
         }
-        function ShowMLplayform(){
+        function ShowMLplayform() {
             document.getElementById('ShowMLplayform').addEventListener('change', function () {
                 const mlDiv = document.getElementById('MLplayform');
                 mlDiv.style.display = this.checked ? 'block' : 'none';
-              });
+            });
         }
+
+
 
     </script>
 </head>
@@ -456,10 +490,11 @@
                 <article style="display: flex; align-items: flex-start; gap: 20px; max-width: 100%;">
 
                     <!-- 圖片區 -->
-                    <img src="image/teach.png" style="width: 120px; height: auto; flex-shrink: 0; ">
+                    <img src="image/teach.png" alt="來自https://browndust2.gitbook.io/designkit_tw"
+                        style="width: 120px; height: auto; flex-shrink: 0; ">
 
-                     <!-- 文字 + 表單區 -->
-                     <div style="flex: 1; min-width: 0; word-wrap: break-word;">
+                    <!-- 文字 + 表單區 -->
+                    <div style="flex: 1; min-width: 0; word-wrap: break-word;">
                         <p>若您是下載的User開始使用本專案之前請確保</p>
                         <p>1.本電腦有安裝3.9.x版本的python&nbsp;&nbsp;&nbsp;&nbsp;
                             <a href="https://www.python.org/downloads/release/python-3913/">Python3.9</a>
@@ -497,17 +532,17 @@
                             <option value="KNeighbors">K Neighbors</option>
                             <option value="DecisionTree">Decision Tree</option>
                             <option value="RandomForest">Random Forest</option>
-                            <option value="LinearSVC">LinearSVC</option>
-                            <option value="LinearSVR">LinearSVR</option>
+                            <option value="LinearSVM">LinearSVM</option>
+
                             <option value="LogisticRegression">LogisticRegression</option>
                             <option value="LinearRegression">LinearRegression</option>
                             <option value="SVM">SVM</option>
                         </select>
                         <br><br>
-                        <label for="task_type" id="task_type_label">Regression & classification? </label>
-                        <select name="task_type" id="task_type">
+                        <label for="task_type" id="task_type_label">classification or regression? </label>
+                        <select name="task_type" id="task_type" onchange="linearSVMchange()">
                             <option value="classification">classification</option>
-                            <option value="regression">Regression</option>
+                            <option value="regression">regression</option>
                         </select>
                         <br><br>
                         <!-- KNeighbors 參數 -->
@@ -539,22 +574,18 @@
 
                         </div>
 
-                        <!-- linearSVC_params 參數 -->
-                        <div id="linearSVC_params" style="display:none;">
-
-                            <label for="svc_C">C值(0.1-10)：</label>
-                            <input type="number" name="svc_C" step="0.1" min="0.1" max="10" value="1.0">
-
+                        <!-- LinearSVM - 分類參數 -->
+                        <div id="linearSVM_classification_params" style="display:none;">
+                            <label for="svm_C">C值(0.1-10)：</label>
+                            <input type="number" name="svm_C" step="0.1" min="0.1" max="10" value="1.0">
                         </div>
 
-                        <!-- linearSVR_params 參數 -->
-                        <div id="linearSVR_params" style="display:none;">
-
-                            <label for="svr_C">C值(0.1-10)：</label>
-                            <input type="number" name="svr_C" step="0.1" min="0.1" max="10" value="1.0">
-                            <br>
-                            <label for="svr_epsilon">Epsilon(0.01-1)：</label>
-                            <input type="number" name="svr_epsilon" step="0.01" min="0.01" max="1" value="0.1">
+                        <!-- LinearSVM - 回歸參數 -->
+                        <div id="linearSVM_regression_params" style="display:none;">
+                            <label for="svm_C">C值(0.1-10)：</label>
+                            <input type="number" name="svm_C" step="0.1" min="0.1" max="10" value="1.0"><br>
+                            <label for="svm_epsilon">Epsilon(0.01-1)：</label>
+                            <input type="number" name="svm_epsilon" step="0.01" min="0.01" max="1" value="0.1">
                         </div>
 
                         <!-- logisticRegression_params 參數 -->
@@ -612,20 +643,22 @@
                         <div class="Dragform-field">
                             <label for="fileInput">選擇檔案：</label>
                             <input type="text" id="fileInput" name="fileInput" placeholder="拖拉檔案名稱到這裡" readonly>
-                            <label>每次運行的時間不超過:&nbsp;<input type="number" name="timelimit" min="1" max="20"
+                            <label>每次運行的時間不超過:&nbsp;<input type="number" name="timelimit" min="1" max="3000"
                                     value="10">秒<br />(使AI在秒數到了之後停止運作)</label>
                             <span>以上都設定好了!</span><input id="ShowMLplayform" type="checkbox" required>
                             <label></label>
                             <input type="submit" value="生成該模型專用MLplay檔案">
-                             <p>MLplay生成完畢之後 在使用下方的功能喔!!!</p>
+                            <p>MLplay生成完畢之後 在使用下方的功能喔!!!</p>
                         </div>
                     </form>
                     <div class="MLplay">
-                        <form id="MLplayform" class="MLplayform" action="RunMLplay.php" method="POST" style="display: none;">
-                           
+                        <form id="MLplayform" class="MLplayform" action="RunMLplay.php" method="POST"
+                            style="display: none;">
+
                             <input type="text" id="fileInputTexthold" name="fileInputTexthold" readonly
                                 style="display: none;">
-                            <label>模型總共要執行幾次(1-10):&nbsp;<input type="number" name="times" min="1" max="10" value="1"></label>
+                            <label>模型總共要執行幾次(1-10):&nbsp;<input type="number" name="times" min="1" max="30"
+                                    value="1"></label>
                             <label>要運行的關卡是?(點擊下方圖片)</label>
                             <div class="stage-selector">
                                 <!-- Stage 1 -->
@@ -754,7 +787,6 @@
 
                 </div>
                 <div id="LinearSVC/SVR_Introduction" class="Introduction" style="display:none;">
-
                     <h3>linearSVC - Linear Support Vector Classification & LinearSVR - Linear Support Vector
                         Regression<br>
                     </h3>
@@ -874,8 +906,9 @@
                     <p>LIBLINEAR、LIBSVM兩個開源的機器學習資料庫，均由台灣大學開發被scikit-learm引進並使用</p>
 
                 </div>
+
                 <div id="LogisticRegression/Linear_Introduction" class="Introduction" style="display:none;">
-                    <h3>Linear regression __ Logistic Regression</h3>
+                    <h3>Linear Regression __ Logistic Regression</h3>
                     <h3>線性回歸</h3>
                     <p>線性回歸 (Linear regression)是一種監督式學習演算法，<br>將標記的資料集中學習找出一條誤差最小的直線，來預測目標變量。<br><br>
 
@@ -950,10 +983,33 @@
             </div>
             <div id="ShowCSV" class="Nowcsvtable" style="display: none;">記得要先案生成再案運行成果喔</div>
             <div id="RANKSection" class="RANKSection" style="display: none;">
-                <p>RE=>回歸 CL=>分類</p>
-                <div id="RankTable" class="RandTable"></div>
+                <p class="stage_weight">
+                    RE=>回歸 CL=>分類
+                    <br>
+                    &#8251;為確保排行正確性，樣本數低於一定數量時將會由最下方開始排列。
+                    <br>
+                    關卡權重：
+                    <span class="">關卡一 4%</span>
+                    <span class="">關卡二 13%</span>
+                    <span class="">關卡三 22%</span>
+                    <span class="">關卡四 26%</span>
+                    <span class="">關卡五 35%</span>
+                </p>
                 <br>
-                <canvas class="myChart" id="myChart"></canvas>
+                <label>選擇關卡：
+                    <select id="Stage_select" onchange="updateTable(this.value);loadCanvas(this.value)">
+                        <option value="all">總表</option>
+                        <option value="1">關卡 1</option>
+                        <option value="2">關卡 2</option>
+                        <option value="3">關卡 3</option>
+                        <option value="4">關卡 4</option>
+                        <option value="5">關卡 5</option>
+                    </select>
+                    <div id="RankTable" class="RandTable">
+
+                    </div>
+                    <br>
+                    <canvas class="myChart" id="myChart" width="1600" height="2000"></canvas>
             </div>
         </div>
     </div>

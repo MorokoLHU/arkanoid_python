@@ -1,12 +1,21 @@
 <?php
-// 開啟錯誤顯示
+// 顯示錯誤資訊以方便除錯
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
+ 
+// 資料夾與檔案路徑
+$dataFolder = __DIR__ . '/../save';
+$modelCsvPath = __DIR__ . '/../../result/model_name.csv';
 
-// 設定資料夾路徑
-$dataFolder = __DIR__ . '/../save'; // 使用相對路徑指向 save 資料夾
+// 🧽 正規化模型名稱用的函式
+function normalizeModelName($name) {
+    $name = preg_replace('/[\x00-\x1F\x7F]/u', '', $name); // 移除控制字元
+    $name = preg_replace('/^\xEF\xBB\xBF/', '', $name);    // 移除 UTF-8 BOM
+    $name = trim($name);
+    return str_replace('.', '', $name); // 可選：移除小數點，避免 "17.12" vs "1712" 不一致
+}
 
-// 確認資料夾是否存在
+// ✅ 檢查資料夾是否存在
 if (!is_dir($dataFolder)) {
     echo json_encode([
         'error' => true,
@@ -16,10 +25,8 @@ if (!is_dir($dataFolder)) {
     exit;
 }
 
-// 讀取資料夾內所有檔案
+// ✅ 取得所有 .pickle 檔案（去除副檔名）
 $files = scandir($dataFolder);
-
-// 檢查是否有讀取錯誤
 if ($files === false) {
     echo json_encode([
         'error' => true,
@@ -29,17 +36,13 @@ if ($files === false) {
     exit;
 }
 
-// 過濾掉 "." 和 ".." 目錄，並且只保留 .pickle 的檔案
 $fileNames = array_filter($files, function($file) {
     return pathinfo($file, PATHINFO_EXTENSION) === 'pickle';
 });
-
-// 去除副檔名，只保留檔名
 $fileNames = array_map(function($file) {
     return pathinfo($file, PATHINFO_FILENAME);
 }, $fileNames);
 
-// 檢查是否有檔案
 if (empty($fileNames)) {
     echo json_encode([
         'error' => true,
@@ -49,13 +52,76 @@ if (empty($fileNames)) {
     exit;
 }
 
-// 將檔案名稱轉換為數值型的陣列
-$fileNames = array_values($fileNames);
+// ✅ 載入 CSV 並處理模型名稱 - 修正版本
+$modelList = [];
+if (file_exists($modelCsvPath)) {
+    $csvContent = file_get_contents($modelCsvPath);
+    $csvContent = preg_replace('/^\xEF\xBB\xBF/', '', $csvContent); // 移除 BOM
+    
+    $lines = explode("\n", $csvContent);
+    
+    foreach ($lines as $lineIndex => $line) {
+        $line = trim($line);
+        if (empty($line)) continue;
+        
+        // 跳過表頭
+        if ($lineIndex === 0 && stripos($line, 'model_name') !== false) {
+            continue;
+        }
+        
+        // 處理可能的多個模型名稱在同一行的情況
+        if (strpos($line, ' ') !== false) {
+            // 如果包含空格，可能是多個模型名稱用空格分隔
+            $models = preg_split('/\s+/', $line);
+            foreach ($models as $model) {
+                $model = trim($model);
+                if (!empty($model) && stripos($model, 'model_name') === false) {
+                    $normalizedModel = normalizeModelName($model);
+                    if (!empty($normalizedModel)) {
+                        $modelList[] = $normalizedModel;
+                    }
+                }
+            }
+        } else {
+            // 單一模型名稱
+            $normalizedModel = normalizeModelName($line);
+            if (!empty($normalizedModel) && stripos($normalizedModel, 'model_name') === false) {
+                $modelList[] = $normalizedModel;
+            }
+        }
+    }
+    
+    $modelList = array_unique($modelList); // 去除重複
+}
 
-// 回傳檔案名稱
-header('Content-Type: application/json'); // 設定 Content-Type 為 JSON
+// 除錯：輸出解析到的模型清單
+error_log("解析到的模型清單: " . print_r($modelList, true));
+
+// ✅ 檔案清單標記 highlight
+$results = array_map(function($name) use ($modelList) {
+    $normalizedName = normalizeModelName($name);
+    $match = in_array($normalizedName, $modelList);
+
+    // 除錯用 log - 加強版
+    error_log("檔案: [$name] => 正規化: [$normalizedName] => 匹配: " . ($match ? 'YES' : 'NO'));
+    if (!$match) {
+        error_log("CSV中的模型: " . implode(', ', $modelList));
+    }
+
+    return [
+        'name' => $name,
+        'highlight' => $match
+    ];
+}, $fileNames);
+
+// ✅ 回傳 JSON 結果
+header('Content-Type: application/json');
 echo json_encode([
     'error' => false,
-    'file_names' => $fileNames // 回傳檔案名稱陣列
+    'file_names' => array_values($results),
+    'debug' => [
+        'model_list_count' => count($modelList),
+        'first_few_models' => array_slice($modelList, 0, 5)
+    ]
 ]);
 ?>

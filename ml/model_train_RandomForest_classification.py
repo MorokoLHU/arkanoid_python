@@ -206,7 +206,7 @@ save_path = os.path.join(os.path.dirname(__file__), "save")
 if not os.path.isdir(save_path):
     os.mkdir(save_path)
 
-model_filename = 'RandomForest_CL_acc={:.3f}.pickle'.format(acc_test)
+model_filename = 'RandomForest_CL_acc={:.2f}.pickle'.format(acc_test)
 with open(os.path.join(save_path, model_filename), 'wb') as f:
     pickle.dump(clf, f)
 

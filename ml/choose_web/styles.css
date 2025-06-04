@@ -276,7 +276,10 @@ div {
   background-color: #e0e0e0;
   border-color: #bbb;
 }
-
+.DragModel .highlight-row.highlight-row {
+     background: linear-gradient(to right, #d3f8d3, #a8e6a8) !important;
+    font-weight: bold;
+}
 /* 可放入表單區域 */
 .DragModel .dragform-container {
   position: relative;
@@ -532,12 +535,20 @@ div {
 }
 
 .RANKSection .myChart{
-  width: 100% !important;
-  max-width: 1000px;
+  width: 80% !important;
+  max-width: 2000;  
   height: 400px !important;
   margin: 10px auto;
 }
-
+.stage_weight {
+  border-left:solid 5px ;
+  border-right:solid 5px ;
+  padding: 0px 50px;
+  font-weight: bold;
+  background-color: #f9f9f9;
+  margin-right: 0px;
+  display: inline-block;
+}
 
 /* test*/
 
@@ -556,12 +567,13 @@ div {
   width: 120px;
 }
 
+
 /* Menu 容器样式 */
 .menu-container {
   float: left;
 
   width: 8%;
-  height: 2763px;
+  min-height: 100vh; /* 滿版高度但不超出內容 */
   box-shadow: 2px 2px 10px rgba(32, 32, 32, 0.1);
   background:linear-gradient(to right, #000000, #0f0024);
 }
@@ -628,12 +640,13 @@ div {
 @media (max-width: 1000px) {
   .menu-container {
     width: 100%;
-    height: auto;
+    height: 60px;
     display: flex;
     flex-direction: row; /* 水平排列 */
     justify-content: center;
     align-items: center;
     padding: 3px 0;
+    min-height: 0;
   }
   .menu-title {
     text-align: left;
